@@ -1,0 +1,113 @@
+import uuid
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+
+from app.calculation import compute_amount_due_cents, rate_for_company
+from app.database import get_db
+from app.models import Company, Delivery, DeliveryStatus, Driver
+from app.schemas import DeliveryCreate, DeliveryOut, DeliveryReject
+from app.security import get_current_company
+
+router = APIRouter(prefix="/deliveries", tags=["deliveries"])
+
+
+@router.post("", response_model=DeliveryOut, status_code=201)
+def register_delivery(
+    payload: DeliveryCreate,
+    db: Session = Depends(get_db),
+    company: Company = Depends(get_current_company),
+):
+    driver = (
+        db.query(Driver)
+        .filter(Driver.id == payload.driver_id, Driver.company_id == company.id)
+        .first()
+    )
+    if driver is None:
+        raise HTTPException(status_code=404, detail="Driver not found")
+
+    existing = (
+        db.query(Delivery)
+        .filter(
+            Delivery.company_id == company.id,
+            Delivery.external_id == payload.external_id,
+        )
+        .first()
+    )
+    if existing is not None:
+        raise HTTPException(status_code=409, detail="Delivery already registered")
+
+    delivery = Delivery(
+        company_id=company.id,
+        driver_id=driver.id,
+        external_id=payload.external_id,
+        package_count=payload.package_count,
+        rate_cents=rate_for_company(company),
+        status=DeliveryStatus.PENDING,
+        delivered_at=datetime.utcnow(),
+    )
+    db.add(delivery)
+    db.commit()
+    db.refresh(delivery)
+    return delivery
+
+
+@router.get("", response_model=list[DeliveryOut])
+def list_deliveries(
+    db: Session = Depends(get_db),
+    company: Company = Depends(get_current_company),
+    driver_id: uuid.UUID | None = Query(default=None),
+    status: DeliveryStatus | None = Query(default=None),
+):
+    q = db.query(Delivery).filter(Delivery.company_id == company.id)
+    if driver_id is not None:
+        q = q.filter(Delivery.driver_id == driver_id)
+    if status is not None:
+        q = q.filter(Delivery.status == status)
+    return q.order_by(Delivery.created_at.desc()).all()
+
+
+def _get_pending_delivery(db: Session, company: Company, delivery_id: uuid.UUID) -> Delivery:
+    delivery = (
+        db.query(Delivery)
+        .filter(Delivery.id == delivery_id, Delivery.company_id == company.id)
+        .first()
+    )
+    if delivery is None:
+        raise HTTPException(status_code=404, detail="Delivery not found")
+    if delivery.status != DeliveryStatus.PENDING:
+        raise HTTPException(
+            status_code=409, detail=f"Delivery already {delivery.status.value}"
+        )
+    return delivery
+
+
+@router.post("/{delivery_id}/validate", response_model=DeliveryOut)
+def validate_delivery(
+    delivery_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    company: Company = Depends(get_current_company),
+):
+    delivery = _get_pending_delivery(db, company, delivery_id)
+    delivery.amount_due_cents = compute_amount_due_cents(delivery)
+    delivery.status = DeliveryStatus.VALIDATED
+    delivery.validated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(delivery)
+    return delivery
+
+
+@router.post("/{delivery_id}/reject", response_model=DeliveryOut)
+def reject_delivery(
+    delivery_id: uuid.UUID,
+    payload: DeliveryReject,
+    db: Session = Depends(get_db),
+    company: Company = Depends(get_current_company),
+):
+    delivery = _get_pending_delivery(db, company, delivery_id)
+    delivery.status = DeliveryStatus.REJECTED
+    delivery.rejection_reason = payload.reason
+    db.commit()
+    db.refresh(delivery)
+    return delivery
