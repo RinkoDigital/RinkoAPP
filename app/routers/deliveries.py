@@ -1,16 +1,39 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.calculation import compute_amount_due_cents, rate_for_company
+from app.calculation import compute_amount_due_cents, rate_for_client
 from app.database import get_db
-from app.models import Company, Delivery, DeliveryStatus, Driver
-from app.schemas import DeliveryCreate, DeliveryOut, DeliveryReject
+from app.models import Client, Company, Delivery, DeliveryStatus, Driver, PaymentStatus
+from app.schemas import DeliveryCreate, DeliveryMarkPaid, DeliveryOut, DeliveryReject
 from app.security import get_current_company
 
 router = APIRouter(prefix="/deliveries", tags=["deliveries"])
+
+
+def _get_driver(db: Session, company: Company, driver_id: uuid.UUID) -> Driver:
+    driver = (
+        db.query(Driver)
+        .filter(Driver.id == driver_id, Driver.company_id == company.id)
+        .first()
+    )
+    if driver is None:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    return driver
+
+
+def _get_client(db: Session, company: Company, client_id: uuid.UUID) -> Client:
+    client = (
+        db.query(Client)
+        .filter(Client.id == client_id, Client.company_id == company.id)
+        .first()
+    )
+    if client is None:
+        raise HTTPException(status_code=404, detail="Client not found")
+    return client
 
 
 @router.post("", response_model=DeliveryOut, status_code=201)
@@ -19,36 +42,32 @@ def register_delivery(
     db: Session = Depends(get_db),
     company: Company = Depends(get_current_company),
 ):
-    driver = (
-        db.query(Driver)
-        .filter(Driver.id == payload.driver_id, Driver.company_id == company.id)
-        .first()
-    )
-    if driver is None:
-        raise HTTPException(status_code=404, detail="Driver not found")
+    driver = _get_driver(db, company, payload.driver_id)
+    client = _get_client(db, company, payload.client_id)
 
-    existing = (
-        db.query(Delivery)
-        .filter(
-            Delivery.company_id == company.id,
-            Delivery.external_id == payload.external_id,
+    if payload.exceptions_count > payload.assigned_count:
+        raise HTTPException(
+            status_code=422, detail="exceptions_count cannot exceed assigned_count"
         )
-        .first()
-    )
-    if existing is not None:
-        raise HTTPException(status_code=409, detail="Delivery already registered")
 
     delivery = Delivery(
         company_id=company.id,
         driver_id=driver.id,
-        external_id=payload.external_id,
-        package_count=payload.package_count,
-        rate_cents=rate_for_company(company),
+        client_id=client.id,
+        batch_date=payload.batch_date,
+        assigned_count=payload.assigned_count,
+        exceptions_count=payload.exceptions_count,
+        rate_cents=rate_for_client(company, client),
         status=DeliveryStatus.PENDING,
-        delivered_at=datetime.utcnow(),
     )
     db.add(delivery)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409, detail="Delivery batch already registered for this driver/client/date"
+        )
     db.refresh(delivery)
     return delivery
 
@@ -58,17 +77,29 @@ def list_deliveries(
     db: Session = Depends(get_db),
     company: Company = Depends(get_current_company),
     driver_id: uuid.UUID | None = Query(default=None),
+    client_id: uuid.UUID | None = Query(default=None),
     status: DeliveryStatus | None = Query(default=None),
+    payment_status: PaymentStatus | None = Query(default=None),
+    start_date: date | None = Query(default=None),
+    end_date: date | None = Query(default=None),
 ):
     q = db.query(Delivery).filter(Delivery.company_id == company.id)
     if driver_id is not None:
         q = q.filter(Delivery.driver_id == driver_id)
+    if client_id is not None:
+        q = q.filter(Delivery.client_id == client_id)
     if status is not None:
         q = q.filter(Delivery.status == status)
-    return q.order_by(Delivery.created_at.desc()).all()
+    if payment_status is not None:
+        q = q.filter(Delivery.payment_status == payment_status)
+    if start_date is not None:
+        q = q.filter(Delivery.batch_date >= start_date)
+    if end_date is not None:
+        q = q.filter(Delivery.batch_date <= end_date)
+    return q.order_by(Delivery.batch_date.desc()).all()
 
 
-def _get_pending_delivery(db: Session, company: Company, delivery_id: uuid.UUID) -> Delivery:
+def _get_delivery(db: Session, company: Company, delivery_id: uuid.UUID) -> Delivery:
     delivery = (
         db.query(Delivery)
         .filter(Delivery.id == delivery_id, Delivery.company_id == company.id)
@@ -76,6 +107,11 @@ def _get_pending_delivery(db: Session, company: Company, delivery_id: uuid.UUID)
     )
     if delivery is None:
         raise HTTPException(status_code=404, detail="Delivery not found")
+    return delivery
+
+
+def _get_pending_delivery(db: Session, company: Company, delivery_id: uuid.UUID) -> Delivery:
+    delivery = _get_delivery(db, company, delivery_id)
     if delivery.status != DeliveryStatus.PENDING:
         raise HTTPException(
             status_code=409, detail=f"Delivery already {delivery.status.value}"
@@ -108,6 +144,31 @@ def reject_delivery(
     delivery = _get_pending_delivery(db, company, delivery_id)
     delivery.status = DeliveryStatus.REJECTED
     delivery.rejection_reason = payload.reason
+    db.commit()
+    db.refresh(delivery)
+    return delivery
+
+
+@router.post("/{delivery_id}/mark-paid", response_model=DeliveryOut)
+def mark_delivery_paid(
+    delivery_id: uuid.UUID,
+    payload: DeliveryMarkPaid,
+    db: Session = Depends(get_db),
+    company: Company = Depends(get_current_company),
+):
+    delivery = _get_delivery(db, company, delivery_id)
+    if delivery.status != DeliveryStatus.VALIDATED:
+        raise HTTPException(status_code=409, detail="Only validated deliveries can be marked paid")
+    if delivery.payment_status == PaymentStatus.PAID:
+        raise HTTPException(status_code=409, detail="Delivery already marked paid")
+
+    delivery.payment_status = PaymentStatus.PAID
+    delivery.paid_amount_cents = (
+        payload.paid_amount_cents
+        if payload.paid_amount_cents is not None
+        else delivery.amount_due_cents
+    )
+    delivery.paid_at = datetime.utcnow()
     db.commit()
     db.refresh(delivery)
     return delivery

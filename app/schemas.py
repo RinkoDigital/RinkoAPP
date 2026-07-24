@@ -1,9 +1,9 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models import DeliveryStatus
+from app.models import DeliveryStatus, PaymentStatus
 
 
 class CompanyCreate(BaseModel):
@@ -34,10 +34,26 @@ class DriverOut(BaseModel):
     created_at: datetime
 
 
+class ClientCreate(BaseModel):
+    name: str
+    default_rate_cents: int | None = None
+
+
+class ClientOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    default_rate_cents: int | None
+    created_at: datetime
+
+
 class DeliveryCreate(BaseModel):
     driver_id: uuid.UUID
-    external_id: str
-    package_count: int = 1
+    client_id: uuid.UUID
+    batch_date: date
+    assigned_count: int
+    exceptions_count: int = 0
 
 
 class DeliveryOut(BaseModel):
@@ -45,12 +61,18 @@ class DeliveryOut(BaseModel):
 
     id: uuid.UUID
     driver_id: uuid.UUID
-    external_id: str
-    package_count: int
+    client_id: uuid.UUID
+    batch_date: date
+    assigned_count: int
+    exceptions_count: int
+    payable_count: int
     status: DeliveryStatus
     rate_cents: int
     amount_due_cents: int | None
     rejection_reason: str | None
+    payment_status: PaymentStatus
+    paid_amount_cents: int | None
+    paid_at: datetime | None
     validated_at: datetime | None
     created_at: datetime
 
@@ -59,17 +81,62 @@ class DeliveryReject(BaseModel):
     reason: str
 
 
-class DriverEarningsReport(BaseModel):
+class DeliveryMarkPaid(BaseModel):
+    paid_amount_cents: int | None = None
+
+
+class DeliveryDetailRow(BaseModel):
+    week_number: int
+    batch_date: date
+    client_name: str
+    assigned_count: int
+    exceptions_count: int
+    payable_count: int
+    rate_cents: int
+    amount_due_cents: int
+    payment_status: PaymentStatus
+
+
+class ClientSummaryRow(BaseModel):
+    client_name: str
+    assigned_count: int
+    exceptions_count: int
+    payable_count: int
+    completion_rate: float
+    compensation_cents: int
+
+
+class OverallSummary(BaseModel):
+    assigned_count: int
+    exceptions_count: int
+    payable_count: int
+    completion_rate: float
+    rate_cents: int | None
+    total_compensation_cents: int
+
+
+class PaidItem(BaseModel):
+    batch_date: date
+    client_name: str
+    payable_count: int
+    rate_cents: int
+    amount_cents: int
+
+
+class PaymentReconciliation(BaseModel):
+    total_earned_cents: int
+    already_paid_cents: int
+    outstanding_balance_cents: int
+    paid_items: list[PaidItem]
+
+
+class DriverPayReport(BaseModel):
+    company_name: str
     driver_id: uuid.UUID
     driver_name: str
-    validated_deliveries: int
-    total_packages: int
-    amount_due_cents: int
-
-
-class CompanySummaryReport(BaseModel):
-    total_deliveries: int
-    pending: int
-    validated: int
-    rejected: int
-    total_amount_due_cents: int
+    period_start: date
+    period_end: date
+    delivery_detail: list[DeliveryDetailRow]
+    client_summary: list[ClientSummaryRow]
+    overall_summary: OverallSummary
+    payment_reconciliation: PaymentReconciliation

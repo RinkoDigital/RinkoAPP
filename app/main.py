@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.routers import companies, deliveries, drivers, reports
+from app.routers import clients, companies, deliveries, drivers, reports
 
 app = FastAPI(
     title="Rinko Delivery Payment API",
@@ -13,6 +13,7 @@ app = FastAPI(
 
 app.include_router(companies.router)
 app.include_router(drivers.router)
+app.include_router(clients.router)
 app.include_router(deliveries.router)
 app.include_router(reports.router)
 

@@ -16,7 +16,7 @@ Entrega → registro → validação → cálculo por pacote → valor devido �
 
 A empresa continua realizando o pagamento pelos meios atuais — não há
 Stripe, Wise ou movimentação financeira nesta etapa. A API apenas produz o
-registro validado e o valor devido por motorista.
+registro validado, o valor devido por motorista e o relatório de pagamento.
 
 ## Modelo de dados
 
@@ -24,9 +24,15 @@ registro validado e o valor devido por motorista.
   por pacote (`default_rate_cents`).
 - **Driver**: motorista de uma empresa. Usa o sistema gratuitamente para
   acompanhar entregas e ganhos.
-- **Delivery**: uma entrega registrada, com status `pending` → `validated`
-  ou `rejected`. O valor devido (`amount_due_cents`) só é calculado quando a
-  entrega é validada.
+- **Client**: o parceiro para quem a empresa entrega pacotes (ex.: UniUni,
+  GOFO). Pode ter uma tarifa própria (`default_rate_cents`), que sobrepõe a
+  tarifa padrão da empresa.
+- **Delivery**: um lote diário de entregas de um motorista para um client
+  (`assigned_count`, `exceptions_count` → `payable_count` calculado).
+  Status `pending` → `validated` ou `rejected`. O valor devido
+  (`amount_due_cents`) só é calculado na validação. Depois de validado, o
+  lote pode ser marcado como pago (`payment_status`) para fins de
+  reconciliação — sem mover dinheiro de fato.
 
 ## Endpoints
 
@@ -35,15 +41,28 @@ registro validado e o valor devido por motorista.
 | POST | `/companies` | admin key | Cria uma empresa e retorna a API key (mostrada uma única vez) |
 | POST | `/drivers` | company key | Cadastra um motorista |
 | GET | `/drivers` | company key | Lista motoristas |
-| POST | `/deliveries` | company key | Registra uma entrega (status `pending`) |
-| GET | `/deliveries` | company key | Lista entregas (filtros: `driver_id`, `status`) |
-| POST | `/deliveries/{id}/validate` | company key | Valida a entrega e calcula o valor devido |
-| POST | `/deliveries/{id}/reject` | company key | Rejeita a entrega com um motivo |
-| GET | `/reports/drivers/{driver_id}` | company key | Relatório de ganhos de um motorista |
-| GET | `/reports/summary` | company key | Resumo de entregas/valores da empresa |
+| POST | `/clients` | company key | Cadastra um client (ex.: UniUni, GOFO), com tarifa própria opcional |
+| GET | `/clients` | company key | Lista clients |
+| POST | `/deliveries` | company key | Registra um lote diário de entregas (status `pending`) |
+| GET | `/deliveries` | company key | Lista lotes (filtros: `driver_id`, `client_id`, `status`, `payment_status`, `start_date`, `end_date`) |
+| POST | `/deliveries/{id}/validate` | company key | Valida o lote e calcula o valor devido |
+| POST | `/deliveries/{id}/reject` | company key | Rejeita o lote com um motivo |
+| POST | `/deliveries/{id}/mark-paid` | company key | Marca um lote validado como pago (reconciliação) |
+| GET | `/reports/drivers/{driver_id}/pay-report` | company key | Relatório de pagamento do motorista (JSON) para um período |
+| GET | `/reports/drivers/{driver_id}/pay-report.docx` | company key | O mesmo relatório, como arquivo `.docx` para download |
 
 Autenticação de empresa via header `x-api-key`. Criação de empresa via
 header `x-admin-key` (ver `ADMIN_API_KEY` no `.env`).
+
+### Relatório de pagamento do motorista
+
+`GET /reports/drivers/{driver_id}/pay-report?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD`
+retorna, a partir dos lotes validados no período: detalhe diário por
+client, resumo por client, resumo geral (completion rate, compensação
+total) e reconciliação de pagamento (total ganho, já pago, saldo
+pendente). O endpoint `.docx` gera o mesmo relatório como um documento
+Word, no layout de relatório semanal de performance e pagamento por
+motorista.
 
 ## Rodando localmente
 
