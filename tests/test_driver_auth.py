@@ -148,6 +148,7 @@ def test_driver_sees_only_own_deliveries_and_can_submit_pod(client, company_and_
     )
     assert resp.status_code == 201
     package = resp.json()
+    assert package["source"] == "manual"
 
     fake_jpeg = io.BytesIO(b"\xff\xd8\xff\xe0" + b"0" * 50)
     resp = client.post(
@@ -163,6 +164,41 @@ def test_driver_sees_only_own_deliveries_and_can_submit_pod(client, company_and_
         headers=driver_headers,
     )
     assert resp.status_code == 404
+
+
+def test_driver_cannot_spoof_external_source(client, company_and_key):
+    company, headers = company_and_key
+    driver = _create_driver_with_email(client, headers)
+    uniuni = client.post("/clients", json={"name": "UniUni"}, headers=headers).json()
+    delivery = client.post(
+        "/deliveries",
+        json={
+            "driver_id": driver["id"],
+            "client_id": uniuni["id"],
+            "batch_date": "2026-07-06",
+            "assigned_count": 5,
+            "exceptions_count": 0,
+        },
+        headers=headers,
+    ).json()
+
+    token_body = _accept_invite(client, driver["invite_token"])
+    driver_headers = {"Authorization": f"Bearer {token_body['access_token']}"}
+
+    resp = client.post(
+        f"/me/deliveries/{delivery['id']}/packages",
+        json={
+            "tracking_code": "PKG-SPOOF",
+            "outcome": "delivered",
+            "source": "uniuni",
+            "external_reference": "fake-uniuni-id",
+        },
+        headers=driver_headers,
+    )
+    assert resp.status_code == 201
+    package = resp.json()
+    assert package["source"] == "manual"
+    assert package["external_reference"] is None
 
 
 def test_driver_pay_report_own_data_only(client, company_and_key):

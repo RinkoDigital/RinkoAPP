@@ -40,6 +40,47 @@ def test_register_delivered_package(client, company_and_key):
     assert package["pod_captured_at"] is not None
     assert package["pod_photo_url"] is None
     assert package["return_reason"] is None
+    assert package["source"] == "manual"
+    assert package["external_reference"] is None
+
+
+def test_admin_can_register_package_from_external_platform(client, company_and_key):
+    company, headers = company_and_key
+    _, _, delivery = _setup_delivery(client, headers)
+
+    resp = client.post(
+        f"/deliveries/{delivery['id']}/packages",
+        json={
+            "tracking_code": "PKG-EXT-1",
+            "outcome": "delivered",
+            "source": "uniuni",
+            "external_reference": "uniuni-order-88213",
+        },
+        headers=headers,
+    )
+    assert resp.status_code == 201
+    package = resp.json()
+    assert package["source"] == "uniuni"
+    assert package["external_reference"] == "uniuni-order-88213"
+
+
+def test_manual_source_ignores_external_reference(client, company_and_key):
+    company, headers = company_and_key
+    _, _, delivery = _setup_delivery(client, headers)
+
+    resp = client.post(
+        f"/deliveries/{delivery['id']}/packages",
+        json={
+            "tracking_code": "PKG-MAN-1",
+            "outcome": "delivered",
+            "external_reference": "should-be-dropped",
+        },
+        headers=headers,
+    )
+    assert resp.status_code == 201
+    package = resp.json()
+    assert package["source"] == "manual"
+    assert package["external_reference"] is None
 
 
 def test_register_returned_package_requires_reason(client, company_and_key):

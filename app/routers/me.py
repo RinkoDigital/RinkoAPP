@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Delivery, DeliveryStatus, Driver, PaymentStatus
+from app.models import Delivery, DeliveryStatus, Driver, PackageSource, PaymentStatus
 from app.routers.reports import _build_driver_pay_report
 from app.schemas import DeliveryOut, DriverMeOut, DriverPayReport, PackageCreate, PackageOut
 from app.security import get_current_driver
@@ -71,7 +71,7 @@ def register_own_package(
     driver: Driver = Depends(get_current_driver),
 ):
     delivery = get_own_delivery(db, driver, delivery_id)
-    return create_package(db, delivery, payload)
+    return create_package(db, delivery, payload, force_source=PackageSource.MANUAL)
 
 
 @router.post("/deliveries/{delivery_id}/packages/{package_id}/pod-photo", response_model=PackageOut)

@@ -33,6 +33,15 @@ class ReturnReason(str, enum.Enum):
     OTHER = "other"
 
 
+class PackageSource(str, enum.Enum):
+    """Where a package's delivery/return record came from."""
+
+    MANUAL = "manual"
+    UNIUNI = "uniuni"
+    GOFO = "gofo"
+    OTHER_PLATFORM = "other_platform"
+
+
 class Company(Base):
     __tablename__ = "companies"
 
@@ -146,6 +155,10 @@ class Package(Base):
     outcome: Mapped[PackageOutcome] = mapped_column(
         Enum(PackageOutcome, native_enum=False), nullable=False
     )
+    source: Mapped[PackageSource] = mapped_column(
+        Enum(PackageSource, native_enum=False), nullable=False, default=PackageSource.MANUAL
+    )
+    external_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Proof of delivery (outcome = DELIVERED)
     pod_photo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)

@@ -110,6 +110,20 @@ admin (`/deliveries/{id}/packages`) quanto o próprio motorista
 (`/me/deliveries/{id}/packages`) podem registrar pacotes — o motorista só
 no que for de um lote seu.
 
+### Origem do registro (`source`) — ponto de integração futuro
+
+Cada `Package` tem um campo `source`: `manual` (motorista registrou pelo
+app da Rinko — o padrão hoje), ou `uniuni`/`gofo`/`other_platform` pra
+quando existir integração real com as plataformas parceiras (elas
+capturam a prova de entrega nos próprios apps dos motoristas; nesse caso
+a Rinko só puxaria o dado, não pediria pro motorista registrar de novo).
+Isso ainda **não está integrado** — hoje não há acesso de API da
+UniUni/GOFO — mas o campo já existe pra não travar o esquema quando essa
+integração vier. Só o admin pode marcar um pacote como vindo de uma
+plataforma externa (`POST /deliveries/{id}/packages` com `source` e
+`external_reference`); o endpoint do motorista (`/me/...`) sempre força
+`source=manual`, mesmo que o payload tente informar outra coisa.
+
 ### Onboarding do motorista
 
 1. Admin cadastra o motorista com `POST /drivers` incluindo o `email`.
@@ -151,3 +165,6 @@ Os testes usam SQLite em memória e não dependem do Postgres.
   uma tarifa fixa por empresa.
 - Exportação de relatórios (CSV/PDF) para uso no processo de pagamento
   existente da empresa.
+- Integração real com UniUni/GOFO (API oficial, se disponibilizarem, ou
+  importação de arquivo exportado do portal delas) para puxar prova de
+  entrega automaticamente em vez do motorista registrar manualmente.

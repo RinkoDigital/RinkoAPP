@@ -3,7 +3,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from app.models import DeliveryStatus, PackageOutcome, PaymentStatus, ReturnReason
+from app.models import DeliveryStatus, PackageOutcome, PackageSource, PaymentStatus, ReturnReason
 
 
 class CompanyCreate(BaseModel):
@@ -170,6 +170,8 @@ class DriverPayReport(BaseModel):
 class PackageCreate(BaseModel):
     tracking_code: str
     outcome: PackageOutcome
+    source: PackageSource = PackageSource.MANUAL
+    external_reference: str | None = None
     pod_scan_code: str | None = None
     pod_latitude: float | None = None
     pod_longitude: float | None = None
@@ -194,6 +196,8 @@ class PackageOut(BaseModel):
     delivery_id: uuid.UUID
     tracking_code: str
     outcome: PackageOutcome
+    source: PackageSource
+    external_reference: str | None
     pod_photo_url: str | None
     pod_scan_code: str | None
     pod_captured_at: datetime | None
