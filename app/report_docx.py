@@ -4,7 +4,8 @@ from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt
 
-from app.schemas import DriverPayReport, PaymentReceipt
+from app.models import PaymentStatus
+from app.schemas import DeliveryProof, DriverPayReport
 
 
 def _money(cents: int) -> str:
@@ -168,35 +169,41 @@ def render_driver_pay_report_docx(report: DriverPayReport) -> bytes:
     return buffer.getvalue()
 
 
-def render_payment_receipt_docx(receipt: PaymentReceipt) -> bytes:
+def render_delivery_proof_docx(proof: DeliveryProof) -> bytes:
     document = Document()
+    is_paid = proof.payment_status == PaymentStatus.PAID
 
     title = document.add_paragraph()
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = title.add_run(receipt.company_name.upper())
+    run = title.add_run(proof.company_name.upper())
     run.bold = True
     run.font.size = Pt(16)
 
     subtitle = document.add_paragraph()
     subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = subtitle.add_run("PAYMENT RECEIPT")
+    run = subtitle.add_run("PROOF OF DELIVERY")
     run.bold = True
     run.font.size = Pt(13)
 
     ref = document.add_paragraph()
     ref.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = ref.add_run(f"Receipt No. {receipt.receipt_number}")
+    run = ref.add_run(f"Reference No. {proof.proof_number}")
     run.font.size = Pt(10)
 
     document.add_paragraph()
     _key_value_table(
         document,
         [
-            ("Driver:", receipt.driver_name),
-            ("Client:", receipt.client_name),
-            ("Delivery Date:", receipt.batch_date.isoformat()),
-            ("Validated:", receipt.validated_at.strftime("%Y-%m-%d %H:%M UTC")),
-            ("Paid:", receipt.paid_at.strftime("%Y-%m-%d %H:%M UTC")),
+            ("Driver:", proof.driver_name),
+            ("Client:", proof.client_name),
+            ("Delivery Date:", proof.batch_date.isoformat()),
+            ("Validated:", proof.validated_at.strftime("%Y-%m-%d %H:%M UTC")),
+            (
+                "Payment Status:",
+                f"PAID — {proof.paid_at.strftime('%Y-%m-%d %H:%M UTC')}"
+                if is_paid
+                else "PENDING",
+            ),
         ],
     )
 
@@ -205,13 +212,13 @@ def render_payment_receipt_docx(receipt: PaymentReceipt) -> bytes:
     _key_value_table(
         document,
         [
-            ("Assigned", str(receipt.assigned_count)),
-            ("Exceptions / Returns", str(receipt.exceptions_count)),
-            ("Payable Delivered", str(receipt.payable_count)),
-            ("Rate", _money(receipt.rate_cents)),
-            ("Amount Due", _money(receipt.amount_due_cents)),
-            ("TOTAL PAID", _money(receipt.paid_amount_cents)),
-        ],
+            ("Assigned", str(proof.assigned_count)),
+            ("Exceptions / Returns", str(proof.exceptions_count)),
+            ("Payable Delivered", str(proof.payable_count)),
+            ("Rate", _money(proof.rate_cents)),
+            ("AMOUNT DUE", _money(proof.amount_due_cents)),
+        ]
+        + ([("Amount Paid", _money(proof.paid_amount_cents))] if is_paid else []),
     )
 
     document.add_paragraph()
@@ -219,19 +226,24 @@ def render_payment_receipt_docx(receipt: PaymentReceipt) -> bytes:
     _key_value_table(
         document,
         [
-            ("Packages logged", str(receipt.packages_logged)),
-            ("With photo proof", str(receipt.packages_with_photo)),
-            ("With confirmation scan", str(receipt.packages_with_scan_code)),
+            ("Packages logged", str(proof.packages_logged)),
+            ("With photo proof", str(proof.packages_with_photo)),
+            ("With confirmation scan", str(proof.packages_with_scan_code)),
         ],
     )
 
     document.add_paragraph()
     note = document.add_paragraph()
+    payment_clause = (
+        f"and paid to the driver on {proof.paid_at.strftime('%Y-%m-%d')}"
+        if is_paid
+        else "with payment to the driver still pending"
+    )
     note.add_run(
-        f"This receipt certifies that {receipt.company_name} paid {receipt.driver_name} "
-        f"{_money(receipt.paid_amount_cents)} for {receipt.payable_count} payable deliveries to "
-        f"{receipt.client_name} on {receipt.batch_date.isoformat()}, validated and recorded in the "
-        "Rinko Delivery Payment system."
+        f"This document certifies that {proof.payable_count} payable deliveries were completed "
+        f"for {proof.client_name} by {proof.driver_name} on {proof.batch_date.isoformat()}, "
+        f"validated in the Rinko Delivery Payment system {payment_clause}. Provided as evidence "
+        "of delivery completion."
     ).italic = True
 
     document.add_paragraph()
@@ -239,7 +251,7 @@ def render_payment_receipt_docx(receipt: PaymentReceipt) -> bytes:
     table.style = "Table Grid"
     _set_cell_text(table.rows[0].cells[0], "Driver Signature:", bold=True)
     _set_cell_text(table.rows[0].cells[2], "Date:", bold=True)
-    _set_cell_text(table.rows[1].cells[0], "Paid By:", bold=True)
+    _set_cell_text(table.rows[1].cells[0], "Verified By:", bold=True)
     _set_cell_text(table.rows[1].cells[2], "Date:", bold=True)
 
     buffer = io.BytesIO()

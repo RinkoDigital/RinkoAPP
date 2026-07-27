@@ -8,10 +8,10 @@ from sqlalchemy.orm import Session
 from app.calculation import compute_amount_due_cents, rate_for_client
 from app.database import get_db
 from app.models import Client, Company, Delivery, DeliveryStatus, Driver, PaymentStatus
-from app.report_docx import render_payment_receipt_docx
-from app.schemas import DeliveryCreate, DeliveryMarkPaid, DeliveryOut, DeliveryReject, PaymentReceipt
+from app.report_docx import render_delivery_proof_docx
+from app.schemas import DeliveryCreate, DeliveryMarkPaid, DeliveryOut, DeliveryProof, DeliveryReject
 from app.security import get_current_company
-from app.services.receipts import build_payment_receipt
+from app.services.delivery_proof import build_delivery_proof
 
 router = APIRouter(prefix="/deliveries", tags=["deliveries"])
 
@@ -176,26 +176,26 @@ def mark_delivery_paid(
     return delivery
 
 
-@router.get("/{delivery_id}/receipt", response_model=PaymentReceipt)
-def get_payment_receipt(
+@router.get("/{delivery_id}/proof", response_model=DeliveryProof)
+def get_delivery_proof(
     delivery_id: uuid.UUID,
     db: Session = Depends(get_db),
     company: Company = Depends(get_current_company),
 ):
     delivery = _get_delivery(db, company, delivery_id)
-    return build_payment_receipt(delivery)
+    return build_delivery_proof(delivery)
 
 
-@router.get("/{delivery_id}/receipt.docx")
-def get_payment_receipt_docx(
+@router.get("/{delivery_id}/proof.docx")
+def get_delivery_proof_docx(
     delivery_id: uuid.UUID,
     db: Session = Depends(get_db),
     company: Company = Depends(get_current_company),
 ):
     delivery = _get_delivery(db, company, delivery_id)
-    receipt = build_payment_receipt(delivery)
-    docx_bytes = render_payment_receipt_docx(receipt)
-    filename = f"receipt_{receipt.receipt_number}.docx"
+    proof = build_delivery_proof(delivery)
+    docx_bytes = render_delivery_proof_docx(proof)
+    filename = f"proof_{proof.proof_number}.docx"
     return Response(
         content=docx_bytes,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",

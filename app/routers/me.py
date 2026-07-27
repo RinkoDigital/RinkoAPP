@@ -6,19 +6,19 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Delivery, DeliveryStatus, Driver, PackageSource, PaymentStatus
-from app.report_docx import render_payment_receipt_docx
+from app.report_docx import render_delivery_proof_docx
 from app.routers.reports import _build_driver_pay_report
 from app.schemas import (
     DeliveryOut,
+    DeliveryProof,
     DriverMeOut,
     DriverPayReport,
     PackageCreate,
     PackageOut,
-    PaymentReceipt,
 )
 from app.security import get_current_driver
+from app.services.delivery_proof import build_delivery_proof
 from app.services.packages import attach_pod_photo, create_package
-from app.services.receipts import build_payment_receipt
 
 router = APIRouter(prefix="/me", tags=["driver-self-service"])
 
@@ -110,26 +110,26 @@ def own_pay_report(
     return _build_driver_pay_report(db, driver.company, driver, start_date, end_date)
 
 
-@router.get("/deliveries/{delivery_id}/receipt", response_model=PaymentReceipt)
-def own_payment_receipt(
+@router.get("/deliveries/{delivery_id}/proof", response_model=DeliveryProof)
+def own_delivery_proof(
     delivery_id: uuid.UUID,
     db: Session = Depends(get_db),
     driver: Driver = Depends(get_current_driver),
 ):
     delivery = get_own_delivery(db, driver, delivery_id)
-    return build_payment_receipt(delivery)
+    return build_delivery_proof(delivery)
 
 
-@router.get("/deliveries/{delivery_id}/receipt.docx")
-def own_payment_receipt_docx(
+@router.get("/deliveries/{delivery_id}/proof.docx")
+def own_delivery_proof_docx(
     delivery_id: uuid.UUID,
     db: Session = Depends(get_db),
     driver: Driver = Depends(get_current_driver),
 ):
     delivery = get_own_delivery(db, driver, delivery_id)
-    receipt = build_payment_receipt(delivery)
-    docx_bytes = render_payment_receipt_docx(receipt)
-    filename = f"receipt_{receipt.receipt_number}.docx"
+    proof = build_delivery_proof(delivery)
+    docx_bytes = render_delivery_proof_docx(proof)
+    filename = f"proof_{proof.proof_number}.docx"
     return Response(
         content=docx_bytes,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",

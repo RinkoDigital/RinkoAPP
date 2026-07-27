@@ -66,8 +66,8 @@ registro validado, o valor devido por motorista e o relatório de pagamento.
 | POST | `/deliveries/{id}/validate` | company key | Valida o lote e calcula o valor devido |
 | POST | `/deliveries/{id}/reject` | company key | Rejeita o lote com um motivo |
 | POST | `/deliveries/{id}/mark-paid` | company key | Marca um lote validado como pago (reconciliação) |
-| GET | `/deliveries/{id}/receipt` | company key | Comprovante de pagamento do lote (JSON) — só após marcado como pago |
-| GET | `/deliveries/{id}/receipt.docx` | company key | O mesmo comprovante, como arquivo `.docx` |
+| GET | `/deliveries/{id}/proof` | company key | Prova de entrega do lote (JSON) — disponível assim que validado, com ou sem pagamento |
+| GET | `/deliveries/{id}/proof.docx` | company key | A mesma prova, como arquivo `.docx` |
 | POST | `/deliveries/{id}/packages` | company key | Registra um pacote entregue (com prova) ou devolvido (com motivo) |
 | GET | `/deliveries/{id}/packages` | company key | Lista os pacotes de um lote |
 | POST | `/deliveries/{id}/packages/{package_id}/pod-photo` | company key | Upload da foto de prova de entrega (JPEG/PNG/WebP, multipart) |
@@ -81,8 +81,8 @@ registro validado, o valor devido por motorista e o relatório de pagamento.
 | POST | `/me/deliveries/{id}/packages` | driver token | Motorista registra a própria prova de entrega/devolução |
 | POST | `/me/deliveries/{id}/packages/{package_id}/pod-photo` | driver token | Upload da própria foto de prova de entrega |
 | GET | `/me/pay-report` | driver token | O próprio relatório de pagamento (JSON) |
-| GET | `/me/deliveries/{id}/receipt` | driver token | Comprovante de um pagamento próprio (JSON) |
-| GET | `/me/deliveries/{id}/receipt.docx` | driver token | O mesmo comprovante, como `.docx` |
+| GET | `/me/deliveries/{id}/proof` | driver token | Prova de entrega de um lote próprio (JSON) |
+| GET | `/me/deliveries/{id}/proof.docx` | driver token | A mesma prova, como `.docx` |
 | POST | `/companies/me/rotate-webhook-secret` | company key | Gera um novo segredo de webhook, invalidando o anterior |
 | POST | `/webhooks/{company_id}/{platform}` | webhook secret | Recebe eventos de entrega de uma plataforma parceira (UniUni/GOFO) — especulativo, ver seção abaixo |
 
@@ -100,19 +100,22 @@ pendente). O endpoint `.docx` gera o mesmo relatório como um documento
 Word, no layout de relatório semanal de performance e pagamento por
 motorista.
 
-### Comprovante de pagamento
+### Prova de entrega do lote (independente de pagamento)
 
-Diferente do relatório do período (que soma vários lotes), o comprovante
-é por pagamento individual: só existe depois que um lote é marcado como
-pago (`POST /deliveries/{id}/mark-paid`), e reúne numa única página tudo
-que sustenta aquele valor — valor calculado, quando foi validado, quando
-foi pago, e um resumo da prova de entrega registrada (quantos pacotes
-foram logados, quantos têm foto, quantos têm código de confirmação
-escaneado). É o documento que motorista e empresa guardam como
-comprovante daquele pagamento específico, com número de referência
-próprio (`RCT-XXXXXXXX`). Disponível pro admin (`/deliveries/{id}/receipt`)
-e pro próprio motorista (`/me/deliveries/{id}/receipt`), sempre em JSON
-ou `.docx`.
+Diferente do relatório do período (que soma vários lotes) e do
+pagamento em si, essa prova existe assim que o lote é **validado** —
+`POST /deliveries/{id}/validate` — e não depende de já ter sido pago.
+Serve dois propósitos diferentes: provar pra **plataforma parceira**
+(UniUni/GOFO) que a entrega aconteceu, mesmo antes do motorista
+receber; e, quando já pago, também funcionar como comprovante desse
+pagamento. Reúne numa única página: valor calculado, quando foi
+validado, status do pagamento (`pending` ou `paid` — com valor e data
+quando aplicável), e um resumo da prova de entrega registrada (quantos
+pacotes foram logados, quantos têm foto, quantos têm código de
+confirmação escaneado). Tem número de referência próprio
+(`PRF-XXXXXXXX`). Disponível pro admin (`/deliveries/{id}/proof`) e pro
+próprio motorista (`/me/deliveries/{id}/proof`), sempre em JSON ou
+`.docx`.
 
 ### Prova de entrega e devoluções
 

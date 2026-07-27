@@ -251,8 +251,12 @@ class WebhookEventResult(BaseModel):
     package_id: uuid.UUID
 
 
-class PaymentReceipt(BaseModel):
-    receipt_number: str
+class DeliveryProof(BaseModel):
+    """Proof that a delivery batch happened — independent of whether the
+    driver has been paid yet. Meant to be shown to the contracting
+    platform (UniUni/GOFO) as evidence, not just to the driver."""
+
+    proof_number: str
     company_name: str
     driver_name: str
     client_name: str
@@ -262,9 +266,10 @@ class PaymentReceipt(BaseModel):
     payable_count: int
     rate_cents: int
     amount_due_cents: int
-    paid_amount_cents: int
-    paid_at: datetime
     validated_at: datetime
+    payment_status: PaymentStatus
+    paid_amount_cents: int | None
+    paid_at: datetime | None
     packages_logged: int
     packages_with_photo: int
     packages_with_scan_code: int
