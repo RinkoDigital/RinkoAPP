@@ -53,8 +53,11 @@ class Driver(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    invite_token: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
+    invite_expires_at: Mapped[datetime | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     company: Mapped["Company"] = relationship(back_populates="drivers")
@@ -63,6 +66,10 @@ class Driver(Base):
     __table_args__ = (
         UniqueConstraint("company_id", "external_id", name="uq_driver_company_external_id"),
     )
+
+    @property
+    def has_account(self) -> bool:
+        return self.password_hash is not None
 
 
 class Client(Base):

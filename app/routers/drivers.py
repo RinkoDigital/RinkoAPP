@@ -1,12 +1,15 @@
 import uuid
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.models import Company, Driver
 from app.schemas import DriverCreate, DriverOut
-from app.security import get_current_company
+from app.security import generate_invite_token, get_current_company
 
 router = APIRouter(prefix="/drivers", tags=["drivers"])
 
@@ -18,8 +21,17 @@ def create_driver(
     company: Company = Depends(get_current_company),
 ):
     driver = Driver(company_id=company.id, **payload.model_dump())
+    if driver.email:
+        driver.invite_token = generate_invite_token()
+        driver.invite_expires_at = datetime.utcnow() + timedelta(
+            minutes=settings.driver_invite_expire_minutes
+        )
     db.add(driver)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="A driver with this email already exists")
     db.refresh(driver)
     return driver
 

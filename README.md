@@ -18,12 +18,25 @@ A empresa continua realizando o pagamento pelos meios atuais — não há
 Stripe, Wise ou movimentação financeira nesta etapa. A API apenas produz o
 registro validado, o valor devido por motorista e o relatório de pagamento.
 
+## Dois níveis de acesso
+
+- **Admin (empresa)** — autenticado por `x-api-key`. Cadastra motoristas e
+  clients, registra e valida lotes de entrega, e marca pagamentos.
+  Verifica o trabalho e efetua o pagamento pelos meios atuais da empresa.
+- **Driver (motorista)** — autenticado por login próprio (email + senha,
+  token JWT). Só enxerga os próprios dados: suas entregas, seu relatório de
+  pagamento, e pode registrar a prova de entrega/devolução dos próprios
+  pacotes. Não consegue validar lotes nem marcar pagamentos — isso é
+  exclusivo do admin.
+
 ## Modelo de dados
 
 - **Company**: cliente B2B, autenticado por API key, com uma tarifa padrão
   por pacote (`default_rate_cents`).
-- **Driver**: motorista de uma empresa. Usa o sistema gratuitamente para
-  acompanhar entregas e ganhos.
+- **Driver**: motorista de uma empresa. Cadastrado pelo admin; se tiver
+  email, recebe um `invite_token` pra criar a própria senha e acessar o
+  sistema (`has_account` indica se já ativou a conta). Usa o sistema
+  gratuitamente para acompanhar entregas e ganhos.
 - **Client**: o parceiro para quem a empresa entrega pacotes (ex.: UniUni,
   GOFO). Pode ter uma tarifa própria (`default_rate_cents`), que sobrepõe a
   tarifa padrão da empresa.
@@ -58,9 +71,18 @@ registro validado, o valor devido por motorista e o relatório de pagamento.
 | POST | `/deliveries/{id}/packages/{package_id}/pod-photo` | company key | Upload da foto de prova de entrega (JPEG/PNG/WebP, multipart) |
 | GET | `/reports/drivers/{driver_id}/pay-report` | company key | Relatório de pagamento do motorista (JSON) para um período |
 | GET | `/reports/drivers/{driver_id}/pay-report.docx` | company key | O mesmo relatório, como arquivo `.docx` para download |
+| POST | `/auth/driver/accept-invite` | público | Motorista define a senha com o `invite_token` recebido e já volta logado |
+| POST | `/auth/driver/login` | público | Login do motorista (email + senha) → token JWT |
+| GET | `/me` | driver token | Perfil do motorista logado |
+| GET | `/me/deliveries` | driver token | Lista só as próprias entregas |
+| GET | `/me/deliveries/{id}/packages` | driver token | Lista os pacotes do próprio lote |
+| POST | `/me/deliveries/{id}/packages` | driver token | Motorista registra a própria prova de entrega/devolução |
+| POST | `/me/deliveries/{id}/packages/{package_id}/pod-photo` | driver token | Upload da própria foto de prova de entrega |
+| GET | `/me/pay-report` | driver token | O próprio relatório de pagamento (JSON) |
 
 Autenticação de empresa via header `x-api-key`. Criação de empresa via
-header `x-admin-key` (ver `ADMIN_API_KEY` no `.env`).
+header `x-admin-key` (ver `ADMIN_API_KEY` no `.env`). Autenticação de
+motorista via header `Authorization: Bearer <token>`, obtido no login.
 
 ### Relatório de pagamento do motorista
 
@@ -83,7 +105,22 @@ JPEG/PNG/WebP). Devolvidos exigem um `return_reason` (`refused`,
 `wrong_address`, `damaged`, `undeliverable`, `other`) e aceitam uma nota
 livre. As fotos ficam em `UPLOAD_DIR` (padrão `uploads/`, fora do
 controle de versão) e são servidas em `/uploads/{arquivo}` — em produção,
-trocar por um bucket S3 por trás da mesma função `save_pod_photo`.
+trocar por um bucket S3 por trás da mesma função `save_pod_photo`. Tanto o
+admin (`/deliveries/{id}/packages`) quanto o próprio motorista
+(`/me/deliveries/{id}/packages`) podem registrar pacotes — o motorista só
+no que for de um lote seu.
+
+### Onboarding do motorista
+
+1. Admin cadastra o motorista com `POST /drivers` incluindo o `email`.
+2. A resposta traz um `invite_token` (a empresa envia esse link/código pro
+   motorista pelo canal que preferir — SMS, WhatsApp, email).
+3. Motorista chama `POST /auth/driver/accept-invite` com o token e a senha
+   escolhida — a conta é ativada e ele já recebe um token de acesso.
+4. Depois disso, login normal via `POST /auth/driver/login`.
+
+O token expira em `DRIVER_TOKEN_EXPIRE_MINUTES` (padrão 14 dias); o convite
+expira em `DRIVER_INVITE_EXPIRE_MINUTES` (padrão 7 dias) e é de uso único.
 
 ## Rodando localmente
 

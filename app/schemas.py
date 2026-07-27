@@ -31,7 +31,32 @@ class DriverOut(BaseModel):
     name: str
     email: str | None
     external_id: str | None
+    has_account: bool
+    invite_token: str | None
     created_at: datetime
+
+
+class DriverAcceptInvite(BaseModel):
+    invite_token: str
+    password: str
+
+
+class DriverLogin(BaseModel):
+    email: str
+    password: str
+
+
+class DriverMeOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    email: str | None
+    company_name: str
+
+
+class DriverToken(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    driver: DriverMeOut
 
 
 class ClientCreate(BaseModel):
