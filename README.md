@@ -79,6 +79,8 @@ registro validado, o valor devido por motorista e o relatório de pagamento.
 | POST | `/me/deliveries/{id}/packages` | driver token | Motorista registra a própria prova de entrega/devolução |
 | POST | `/me/deliveries/{id}/packages/{package_id}/pod-photo` | driver token | Upload da própria foto de prova de entrega |
 | GET | `/me/pay-report` | driver token | O próprio relatório de pagamento (JSON) |
+| POST | `/companies/me/rotate-webhook-secret` | company key | Gera um novo segredo de webhook, invalidando o anterior |
+| POST | `/webhooks/{company_id}/{platform}` | webhook secret | Recebe eventos de entrega de uma plataforma parceira (UniUni/GOFO) — especulativo, ver seção abaixo |
 
 Autenticação de empresa via header `x-api-key`. Criação de empresa via
 header `x-admin-key` (ver `ADMIN_API_KEY` no `.env`). Autenticação de
@@ -124,6 +126,45 @@ plataforma externa (`POST /deliveries/{id}/packages` com `source` e
 `external_reference`); o endpoint do motorista (`/me/...`) sempre força
 `source=manual`, mesmo que o payload tente informar outra coisa.
 
+### Webhook de entrada (UniUni/GOFO)
+
+`POST /webhooks/{company_id}/{platform}` — `platform` é `uniuni`, `gofo`
+ou `other`. Autenticado por um segredo compartilhado no header
+`x-webhook-secret` (não é o `x-api-key` da empresa — é um segredo
+separado, gerado junto com a empresa e rotacionável via
+`POST /companies/me/rotate-webhook-secret`).
+
+Esse endpoint ainda é **especulativo**: não existe integração real com
+UniUni/GOFO hoje, então o formato do payload abaixo é o que a Rinko
+define pra si mesma, não o que essas plataformas realmente enviam. Serve
+pra já ter a peça pronta quando (se) alguma delas topar apontar um
+webhook pra cá — nesse caso, provavelmente vai precisar de uma camada de
+tradução na frente pra converter o payload real delas pro formato daqui.
+
+```json
+{
+  "driver_external_id": "uniuni-driver-42",
+  "client_name": "UniUni",
+  "batch_date": "2026-07-06",
+  "tracking_code": "UNI-PKG-1",
+  "outcome": "delivered",
+  "pod_photo_url": "https://.../pod/abc123.jpg",
+  "pod_scan_code": "SCAN-9001",
+  "external_reference": "uniuni-event-abc123"
+}
+```
+
+`driver_external_id` precisa bater com o `external_id` cadastrado no
+`Driver` (é assim que o evento é associado a um motorista específico), e
+`client_name` precisa bater com um `Client` já cadastrado na empresa. O
+lote (`Delivery`) do dia é criado automaticamente na primeira mensagem e
+os totais (`assigned_count`/`exceptions_count`) crescem a cada evento —
+por isso o webhook só aceita eventos enquanto o lote está `pending`; uma
+vez validado ou rejeitado pelo admin, novos eventos pro mesmo dia
+retornam erro. Eventos repetidos (mesmo `tracking_code`) são ignorados
+de forma idempotente, sem duplicar nem dar erro — importante porque
+sistemas de webhook costumam reenviar em caso de timeout.
+
 ### Onboarding do motorista
 
 1. Admin cadastra o motorista com `POST /drivers` incluindo o `email`.
@@ -165,6 +206,7 @@ Os testes usam SQLite em memória e não dependem do Postgres.
   uma tarifa fixa por empresa.
 - Exportação de relatórios (CSV/PDF) para uso no processo de pagamento
   existente da empresa.
-- Integração real com UniUni/GOFO (API oficial, se disponibilizarem, ou
-  importação de arquivo exportado do portal delas) para puxar prova de
-  entrega automaticamente em vez do motorista registrar manualmente.
+- Confirmar com UniUni/GOFO se elas conseguem apontar um webhook pra Rinko
+  (o receptor já existe) ou se o caminho real vai ser API oficial delas
+  ou importação de arquivo — o payload atual do webhook é uma hipótese
+  nossa, não o formato real delas.

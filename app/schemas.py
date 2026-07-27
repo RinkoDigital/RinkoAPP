@@ -15,7 +15,12 @@ class CompanyCreated(BaseModel):
     id: uuid.UUID
     name: str
     api_key: str
+    webhook_secret: str
     default_rate_cents: int
+
+
+class WebhookSecretRotated(BaseModel):
+    webhook_secret: str
 
 
 class DriverCreate(BaseModel):
@@ -206,3 +211,41 @@ class PackageOut(BaseModel):
     return_reason: ReturnReason | None
     return_note: str | None
     created_at: datetime
+
+
+class WebhookEventPayload(BaseModel):
+    """Generic shape expected from an external platform (UniUni/GOFO) webhook.
+
+    Speculative — no real integration exists yet, so this is our own
+    schema, not theirs. A translation layer can sit in front of this if
+    their actual payload format differs once integration is confirmed.
+    """
+
+    driver_external_id: str
+    client_name: str
+    batch_date: date
+    tracking_code: str
+    outcome: PackageOutcome
+    pod_photo_url: str | None = None
+    pod_scan_code: str | None = None
+    pod_latitude: float | None = None
+    pod_longitude: float | None = None
+    return_reason: ReturnReason | None = None
+    return_note: str | None = None
+    external_reference: str | None = None
+
+    @model_validator(mode="after")
+    def _validate_outcome_fields(self):
+        if self.outcome == PackageOutcome.RETURNED and self.return_reason is None:
+            raise ValueError("return_reason is required when outcome is 'returned'")
+        if self.outcome == PackageOutcome.DELIVERED and (
+            self.return_reason is not None or self.return_note is not None
+        ):
+            raise ValueError("return_reason/return_note are only valid when outcome is 'returned'")
+        return self
+
+
+class WebhookEventResult(BaseModel):
+    status: str
+    delivery_id: uuid.UUID
+    package_id: uuid.UUID

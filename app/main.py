@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.routers import auth, clients, companies, deliveries, drivers, me, packages, reports
+from app.routers import auth, clients, companies, deliveries, drivers, me, packages, reports, webhooks
 
 app = FastAPI(
     title="Rinko Delivery Payment API",
@@ -23,6 +23,7 @@ app.include_router(packages.router)
 app.include_router(reports.router)
 app.include_router(auth.router)
 app.include_router(me.router)
+app.include_router(webhooks.router)
 
 Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")

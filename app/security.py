@@ -39,6 +39,12 @@ def get_current_company(
     return company
 
 
+def verify_webhook_secret(company: Company, provided_secret: str) -> bool:
+    if company.webhook_secret_hash is None:
+        return False
+    return secrets.compare_digest(hash_api_key(provided_secret), company.webhook_secret_hash)
+
+
 def generate_invite_token() -> str:
     return secrets.token_urlsafe(24)
 
