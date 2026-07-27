@@ -20,6 +20,19 @@ class PaymentStatus(str, enum.Enum):
     PAID = "paid"
 
 
+class PackageOutcome(str, enum.Enum):
+    DELIVERED = "delivered"
+    RETURNED = "returned"
+
+
+class ReturnReason(str, enum.Enum):
+    REFUSED = "refused"
+    WRONG_ADDRESS = "wrong_address"
+    DAMAGED = "damaged"
+    UNDELIVERABLE = "undeliverable"
+    OTHER = "other"
+
+
 class Company(Base):
     __tablename__ = "companies"
 
@@ -100,6 +113,9 @@ class Delivery(Base):
     company: Mapped["Company"] = relationship(back_populates="deliveries")
     client: Mapped["Client"] = relationship(back_populates="deliveries")
     driver: Mapped["Driver"] = relationship(back_populates="deliveries")
+    packages: Mapped[list["Package"]] = relationship(
+        back_populates="delivery", order_by="Package.created_at"
+    )
 
     __table_args__ = (
         UniqueConstraint(
@@ -110,3 +126,37 @@ class Delivery(Base):
     @property
     def payable_count(self) -> int:
         return self.assigned_count - self.exceptions_count
+
+
+class Package(Base):
+    """An individual package within a delivery batch — proof of delivery or return detail."""
+
+    __tablename__ = "packages"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    delivery_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("deliveries.id"), nullable=False)
+    tracking_code: Mapped[str] = mapped_column(String(255), nullable=False)
+    outcome: Mapped[PackageOutcome] = mapped_column(
+        Enum(PackageOutcome, native_enum=False), nullable=False
+    )
+
+    # Proof of delivery (outcome = DELIVERED)
+    pod_photo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    pod_scan_code: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    pod_captured_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    pod_latitude: Mapped[float | None] = mapped_column(nullable=True)
+    pod_longitude: Mapped[float | None] = mapped_column(nullable=True)
+
+    # Return detail (outcome = RETURNED)
+    return_reason: Mapped[ReturnReason | None] = mapped_column(
+        Enum(ReturnReason, native_enum=False), nullable=True
+    )
+    return_note: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    delivery: Mapped["Delivery"] = relationship(back_populates="packages")
+
+    __table_args__ = (
+        UniqueConstraint("delivery_id", "tracking_code", name="uq_package_delivery_tracking_code"),
+    )

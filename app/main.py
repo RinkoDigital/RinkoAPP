@@ -1,6 +1,10 @@
-from fastapi import FastAPI
+from pathlib import Path
 
-from app.routers import clients, companies, deliveries, drivers, reports
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+from app.config import settings
+from app.routers import clients, companies, deliveries, drivers, packages, reports
 
 app = FastAPI(
     title="Rinko Delivery Payment API",
@@ -15,7 +19,11 @@ app.include_router(companies.router)
 app.include_router(drivers.router)
 app.include_router(clients.router)
 app.include_router(deliveries.router)
+app.include_router(packages.router)
 app.include_router(reports.router)
+
+Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
 
 @app.get("/health")

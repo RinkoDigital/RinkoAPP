@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from app.config import settings
 from app.database import Base
-from app.models import Company, Delivery, Driver  # noqa: F401 ensures metadata is populated
+from app.models import Client, Company, Delivery, Driver, Package  # noqa: F401 ensures metadata is populated
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

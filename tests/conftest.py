@@ -1,8 +1,13 @@
+import os
+import tempfile
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+
+os.environ.setdefault("UPLOAD_DIR", tempfile.mkdtemp(prefix="rinko-uploads-"))
 
 from app.config import settings
 from app.database import Base, get_db

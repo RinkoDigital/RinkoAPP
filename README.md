@@ -33,6 +33,11 @@ registro validado, o valor devido por motorista e o relatório de pagamento.
   (`amount_due_cents`) só é calculado na validação. Depois de validado, o
   lote pode ser marcado como pago (`payment_status`) para fins de
   reconciliação — sem mover dinheiro de fato.
+- **Package**: o detalhe individual de um pacote dentro de um lote —
+  entregue (com prova de entrega: foto, código de confirmação escaneado,
+  geolocalização) ou devolvido (com motivo). Os totais do lote
+  (`assigned_count`/`exceptions_count`) continuam sendo a fonte de verdade
+  pro cálculo de pagamento; o `Package` é a camada de evidência/detalhe.
 
 ## Endpoints
 
@@ -48,6 +53,9 @@ registro validado, o valor devido por motorista e o relatório de pagamento.
 | POST | `/deliveries/{id}/validate` | company key | Valida o lote e calcula o valor devido |
 | POST | `/deliveries/{id}/reject` | company key | Rejeita o lote com um motivo |
 | POST | `/deliveries/{id}/mark-paid` | company key | Marca um lote validado como pago (reconciliação) |
+| POST | `/deliveries/{id}/packages` | company key | Registra um pacote entregue (com prova) ou devolvido (com motivo) |
+| GET | `/deliveries/{id}/packages` | company key | Lista os pacotes de um lote |
+| POST | `/deliveries/{id}/packages/{package_id}/pod-photo` | company key | Upload da foto de prova de entrega (JPEG/PNG/WebP, multipart) |
 | GET | `/reports/drivers/{driver_id}/pay-report` | company key | Relatório de pagamento do motorista (JSON) para um período |
 | GET | `/reports/drivers/{driver_id}/pay-report.docx` | company key | O mesmo relatório, como arquivo `.docx` para download |
 
@@ -63,6 +71,19 @@ total) e reconciliação de pagamento (total ganho, já pago, saldo
 pendente). O endpoint `.docx` gera o mesmo relatório como um documento
 Word, no layout de relatório semanal de performance e pagamento por
 motorista.
+
+### Prova de entrega e devoluções
+
+Cada pacote dentro de um lote pode ser registrado individualmente via
+`POST /deliveries/{id}/packages`, com `outcome` `delivered` ou `returned`.
+Entregues aceitam código de confirmação escaneado (`pod_scan_code`) e
+geolocalização (`pod_latitude`/`pod_longitude`) no próprio registro, e uma
+foto via upload separado (`pod-photo`, `multipart/form-data`, até 8MB,
+JPEG/PNG/WebP). Devolvidos exigem um `return_reason` (`refused`,
+`wrong_address`, `damaged`, `undeliverable`, `other`) e aceitam uma nota
+livre. As fotos ficam em `UPLOAD_DIR` (padrão `uploads/`, fora do
+controle de versão) e são servidas em `/uploads/{arquivo}` — em produção,
+trocar por um bucket S3 por trás da mesma função `save_pod_photo`.
 
 ## Rodando localmente
 

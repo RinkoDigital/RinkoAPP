@@ -6,6 +6,8 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg2://rinko:rinko@localhost:5432/rinko"
     admin_api_key: str = "change-me-admin-key"
+    upload_dir: str = "uploads"
+    max_pod_photo_bytes: int = 8 * 1024 * 1024
 
 
 settings = Settings()

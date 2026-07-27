@@ -1,9 +1,9 @@
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
-from app.models import DeliveryStatus, PaymentStatus
+from app.models import DeliveryStatus, PackageOutcome, PaymentStatus, ReturnReason
 
 
 class CompanyCreate(BaseModel):
@@ -140,3 +140,40 @@ class DriverPayReport(BaseModel):
     client_summary: list[ClientSummaryRow]
     overall_summary: OverallSummary
     payment_reconciliation: PaymentReconciliation
+
+
+class PackageCreate(BaseModel):
+    tracking_code: str
+    outcome: PackageOutcome
+    pod_scan_code: str | None = None
+    pod_latitude: float | None = None
+    pod_longitude: float | None = None
+    return_reason: ReturnReason | None = None
+    return_note: str | None = None
+
+    @model_validator(mode="after")
+    def _validate_outcome_fields(self):
+        if self.outcome == PackageOutcome.RETURNED and self.return_reason is None:
+            raise ValueError("return_reason is required when outcome is 'returned'")
+        if self.outcome == PackageOutcome.DELIVERED and (
+            self.return_reason is not None or self.return_note is not None
+        ):
+            raise ValueError("return_reason/return_note are only valid when outcome is 'returned'")
+        return self
+
+
+class PackageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    delivery_id: uuid.UUID
+    tracking_code: str
+    outcome: PackageOutcome
+    pod_photo_url: str | None
+    pod_scan_code: str | None
+    pod_captured_at: datetime | None
+    pod_latitude: float | None
+    pod_longitude: float | None
+    return_reason: ReturnReason | None
+    return_note: str | None
+    created_at: datetime
