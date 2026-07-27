@@ -66,6 +66,8 @@ registro validado, o valor devido por motorista e o relatório de pagamento.
 | POST | `/deliveries/{id}/validate` | company key | Valida o lote e calcula o valor devido |
 | POST | `/deliveries/{id}/reject` | company key | Rejeita o lote com um motivo |
 | POST | `/deliveries/{id}/mark-paid` | company key | Marca um lote validado como pago (reconciliação) |
+| GET | `/deliveries/{id}/receipt` | company key | Comprovante de pagamento do lote (JSON) — só após marcado como pago |
+| GET | `/deliveries/{id}/receipt.docx` | company key | O mesmo comprovante, como arquivo `.docx` |
 | POST | `/deliveries/{id}/packages` | company key | Registra um pacote entregue (com prova) ou devolvido (com motivo) |
 | GET | `/deliveries/{id}/packages` | company key | Lista os pacotes de um lote |
 | POST | `/deliveries/{id}/packages/{package_id}/pod-photo` | company key | Upload da foto de prova de entrega (JPEG/PNG/WebP, multipart) |
@@ -79,6 +81,8 @@ registro validado, o valor devido por motorista e o relatório de pagamento.
 | POST | `/me/deliveries/{id}/packages` | driver token | Motorista registra a própria prova de entrega/devolução |
 | POST | `/me/deliveries/{id}/packages/{package_id}/pod-photo` | driver token | Upload da própria foto de prova de entrega |
 | GET | `/me/pay-report` | driver token | O próprio relatório de pagamento (JSON) |
+| GET | `/me/deliveries/{id}/receipt` | driver token | Comprovante de um pagamento próprio (JSON) |
+| GET | `/me/deliveries/{id}/receipt.docx` | driver token | O mesmo comprovante, como `.docx` |
 | POST | `/companies/me/rotate-webhook-secret` | company key | Gera um novo segredo de webhook, invalidando o anterior |
 | POST | `/webhooks/{company_id}/{platform}` | webhook secret | Recebe eventos de entrega de uma plataforma parceira (UniUni/GOFO) — especulativo, ver seção abaixo |
 
@@ -95,6 +99,20 @@ total) e reconciliação de pagamento (total ganho, já pago, saldo
 pendente). O endpoint `.docx` gera o mesmo relatório como um documento
 Word, no layout de relatório semanal de performance e pagamento por
 motorista.
+
+### Comprovante de pagamento
+
+Diferente do relatório do período (que soma vários lotes), o comprovante
+é por pagamento individual: só existe depois que um lote é marcado como
+pago (`POST /deliveries/{id}/mark-paid`), e reúne numa única página tudo
+que sustenta aquele valor — valor calculado, quando foi validado, quando
+foi pago, e um resumo da prova de entrega registrada (quantos pacotes
+foram logados, quantos têm foto, quantos têm código de confirmação
+escaneado). É o documento que motorista e empresa guardam como
+comprovante daquele pagamento específico, com número de referência
+próprio (`RCT-XXXXXXXX`). Disponível pro admin (`/deliveries/{id}/receipt`)
+e pro próprio motorista (`/me/deliveries/{id}/receipt`), sempre em JSON
+ou `.docx`.
 
 ### Prova de entrega e devoluções
 

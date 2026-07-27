@@ -249,3 +249,22 @@ class WebhookEventResult(BaseModel):
     status: str
     delivery_id: uuid.UUID
     package_id: uuid.UUID
+
+
+class PaymentReceipt(BaseModel):
+    receipt_number: str
+    company_name: str
+    driver_name: str
+    client_name: str
+    batch_date: date
+    assigned_count: int
+    exceptions_count: int
+    payable_count: int
+    rate_cents: int
+    amount_due_cents: int
+    paid_amount_cents: int
+    paid_at: datetime
+    validated_at: datetime
+    packages_logged: int
+    packages_with_photo: int
+    packages_with_scan_code: int

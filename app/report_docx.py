@@ -4,7 +4,7 @@ from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt
 
-from app.schemas import DriverPayReport
+from app.schemas import DriverPayReport, PaymentReceipt
 
 
 def _money(cents: int) -> str:
@@ -162,6 +162,85 @@ def render_driver_pay_report_docx(report: DriverPayReport) -> bytes:
                 f"deducted from the outstanding balance.",
                 style="List Bullet",
             )
+
+    buffer = io.BytesIO()
+    document.save(buffer)
+    return buffer.getvalue()
+
+
+def render_payment_receipt_docx(receipt: PaymentReceipt) -> bytes:
+    document = Document()
+
+    title = document.add_paragraph()
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = title.add_run(receipt.company_name.upper())
+    run.bold = True
+    run.font.size = Pt(16)
+
+    subtitle = document.add_paragraph()
+    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = subtitle.add_run("PAYMENT RECEIPT")
+    run.bold = True
+    run.font.size = Pt(13)
+
+    ref = document.add_paragraph()
+    ref.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = ref.add_run(f"Receipt No. {receipt.receipt_number}")
+    run.font.size = Pt(10)
+
+    document.add_paragraph()
+    _key_value_table(
+        document,
+        [
+            ("Driver:", receipt.driver_name),
+            ("Client:", receipt.client_name),
+            ("Delivery Date:", receipt.batch_date.isoformat()),
+            ("Validated:", receipt.validated_at.strftime("%Y-%m-%d %H:%M UTC")),
+            ("Paid:", receipt.paid_at.strftime("%Y-%m-%d %H:%M UTC")),
+        ],
+    )
+
+    document.add_paragraph()
+    _add_heading(document, "AMOUNT")
+    _key_value_table(
+        document,
+        [
+            ("Assigned", str(receipt.assigned_count)),
+            ("Exceptions / Returns", str(receipt.exceptions_count)),
+            ("Payable Delivered", str(receipt.payable_count)),
+            ("Rate", _money(receipt.rate_cents)),
+            ("Amount Due", _money(receipt.amount_due_cents)),
+            ("TOTAL PAID", _money(receipt.paid_amount_cents)),
+        ],
+    )
+
+    document.add_paragraph()
+    _add_heading(document, "PROOF OF DELIVERY ON RECORD")
+    _key_value_table(
+        document,
+        [
+            ("Packages logged", str(receipt.packages_logged)),
+            ("With photo proof", str(receipt.packages_with_photo)),
+            ("With confirmation scan", str(receipt.packages_with_scan_code)),
+        ],
+    )
+
+    document.add_paragraph()
+    note = document.add_paragraph()
+    note.add_run(
+        f"This receipt certifies that {receipt.company_name} paid {receipt.driver_name} "
+        f"{_money(receipt.paid_amount_cents)} for {receipt.payable_count} payable deliveries to "
+        f"{receipt.client_name} on {receipt.batch_date.isoformat()}, validated and recorded in the "
+        "Rinko Delivery Payment system."
+    ).italic = True
+
+    document.add_paragraph()
+    table = document.add_table(rows=2, cols=4)
+    table.style = "Table Grid"
+    _set_cell_text(table.rows[0].cells[0], "Driver Signature:", bold=True)
+    _set_cell_text(table.rows[0].cells[2], "Date:", bold=True)
+    _set_cell_text(table.rows[1].cells[0], "Paid By:", bold=True)
+    _set_cell_text(table.rows[1].cells[2], "Date:", bold=True)
 
     buffer = io.BytesIO()
     document.save(buffer)
