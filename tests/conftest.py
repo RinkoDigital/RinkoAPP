@@ -9,7 +9,6 @@ from sqlalchemy.pool import StaticPool
 
 os.environ.setdefault("UPLOAD_DIR", tempfile.mkdtemp(prefix="rinko-uploads-"))
 
-from app.config import settings
 from app.database import Base, get_db
 from app.main import app
 
@@ -45,17 +44,21 @@ def client():
 
 
 @pytest.fixture
-def admin_headers():
-    return {"x-admin-key": settings.admin_api_key}
-
-
-@pytest.fixture
-def company_and_key(client, admin_headers):
+def driver_and_headers(client):
     resp = client.post(
-        "/companies",
-        json={"name": "Acme Logistics", "default_rate_cents": 4},
-        headers=admin_headers,
+        "/auth/signup",
+        json={"name": "Alex Silva", "email": "alex@example.com", "password": "s3cret-pass"},
     )
     assert resp.status_code == 200
     body = resp.json()
-    return body, {"x-api-key": body["api_key"]}
+    return body["driver"], {"Authorization": f"Bearer {body['access_token']}"}
+
+
+@pytest.fixture
+def carrier(client, driver_and_headers):
+    _, headers = driver_and_headers
+    resp = client.post(
+        "/carriers", json={"name": "UniUni", "default_rate_cents": 170}, headers=headers
+    )
+    assert resp.status_code == 201
+    return resp.json()

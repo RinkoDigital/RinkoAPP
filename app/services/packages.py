@@ -4,33 +4,18 @@ from fastapi import HTTPException, UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import Delivery, DeliveryStatus, Package, PackageOutcome, PackageSource
+from app.models import Package, PackageOutcome, PackageSource, WorkSession
 from app.schemas import PackageCreate
 from app.storage import save_pod_photo
 
 
-def create_package(
-    db: Session,
-    delivery: Delivery,
-    payload: PackageCreate,
-    *,
-    force_source: PackageSource | None = None,
-) -> Package:
-    """force_source overrides payload.source — used when the caller (e.g. the
-    driver's own app) must not be able to claim a package came from an
-    external platform like UniUni/GOFO."""
-    if delivery.status == DeliveryStatus.REJECTED:
-        raise HTTPException(status_code=409, detail="Cannot add packages to a rejected delivery")
-
-    source = force_source if force_source is not None else payload.source
-    external_reference = payload.external_reference if source != PackageSource.MANUAL else None
-
+def create_package(db: Session, session: WorkSession, payload: PackageCreate) -> Package:
     package = Package(
-        delivery_id=delivery.id,
+        session_id=session.id,
         tracking_code=payload.tracking_code,
         outcome=payload.outcome,
-        source=source,
-        external_reference=external_reference,
+        source=payload.source,
+        external_reference=payload.external_reference if payload.source != PackageSource.MANUAL else None,
         pod_scan_code=payload.pod_scan_code,
         pod_latitude=payload.pod_latitude,
         pod_longitude=payload.pod_longitude,
@@ -44,7 +29,7 @@ def create_package(
     except IntegrityError:
         db.rollback()
         raise HTTPException(
-            status_code=409, detail="Package already registered for this delivery batch"
+            status_code=409, detail="Package already registered for this work session"
         )
     db.refresh(package)
     return package

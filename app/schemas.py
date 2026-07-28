@@ -3,46 +3,15 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from app.models import DeliveryStatus, PackageOutcome, PackageSource, PaymentStatus, ReturnReason
+from app.models import EvidenceKind, PackageOutcome, PackageSource, PaymentStatus, ReturnReason, WorkSessionStatus
 
 
-class CompanyCreate(BaseModel):
+# ---------- Auth / Driver ----------
+
+
+class DriverSignup(BaseModel):
     name: str
-    default_rate_cents: int = 3
-
-
-class CompanyCreated(BaseModel):
-    id: uuid.UUID
-    name: str
-    api_key: str
-    webhook_secret: str
-    default_rate_cents: int
-
-
-class WebhookSecretRotated(BaseModel):
-    webhook_secret: str
-
-
-class DriverCreate(BaseModel):
-    name: str
-    email: str | None = None
-    external_id: str | None = None
-
-
-class DriverOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID
-    name: str
-    email: str | None
-    external_id: str | None
-    has_account: bool
-    invite_token: str | None
-    created_at: datetime
-
-
-class DriverAcceptInvite(BaseModel):
-    invite_token: str
+    email: str
     password: str
 
 
@@ -51,25 +20,30 @@ class DriverLogin(BaseModel):
     password: str
 
 
-class DriverMeOut(BaseModel):
+class DriverOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     name: str
-    email: str | None
-    company_name: str
+    email: str
+    created_at: datetime
 
 
 class DriverToken(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    driver: DriverMeOut
+    driver: DriverOut
 
 
-class ClientCreate(BaseModel):
+# ---------- Carrier ----------
+
+
+class CarrierCreate(BaseModel):
     name: str
     default_rate_cents: int | None = None
 
 
-class ClientOut(BaseModel):
+class CarrierOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
@@ -78,98 +52,72 @@ class ClientOut(BaseModel):
     created_at: datetime
 
 
-class DeliveryCreate(BaseModel):
-    driver_id: uuid.UUID
-    client_id: uuid.UUID
-    batch_date: date
-    assigned_count: int
+# ---------- Work session ----------
+
+
+class WorkSessionCreate(BaseModel):
+    carrier_id: uuid.UUID
+    route_id: str | None = None
+    service_date: date
+    start_time: datetime | None = None
+    packages_assigned: int = 0
+    agreed_rate_cents: int | None = None
+    payment_due_date: date | None = None
+
+
+class WorkSessionClose(BaseModel):
+    end_time: datetime | None = None
+    packages_assigned: int | None = None
     exceptions_count: int = 0
+    mileage: float | None = None
+    payment_due_date: date | None = None
 
 
-class DeliveryOut(BaseModel):
+class WorkSessionRecordPayment(BaseModel):
+    payment_received_cents: int
+    payment_received_at: datetime | None = None
+
+
+class WorkSessionOut(BaseModel):
+    id: uuid.UUID
+    carrier_id: uuid.UUID
+    carrier_name: str
+    route_id: str | None
+    service_date: date
+    start_time: datetime | None
+    end_time: datetime | None
+    packages_assigned: int
+    exceptions_count: int
+    packages_completed: int
+    mileage: float | None
+    agreed_rate_cents: int
+    expected_gross_cents: int | None
+    status: WorkSessionStatus
+    payment_due_date: date | None
+    payment_status: PaymentStatus
+    payment_received_cents: int | None
+    payment_received_at: datetime | None
+    difference_cents: int | None
+    outstanding_cents: int
+    created_at: datetime
+    closed_at: datetime | None
+
+
+# ---------- Evidence ----------
+
+
+class EvidenceOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    driver_id: uuid.UUID
-    client_id: uuid.UUID
-    batch_date: date
-    assigned_count: int
-    exceptions_count: int
-    payable_count: int
-    status: DeliveryStatus
-    rate_cents: int
-    amount_due_cents: int | None
-    rejection_reason: str | None
-    payment_status: PaymentStatus
-    paid_amount_cents: int | None
-    paid_at: datetime | None
-    validated_at: datetime | None
-    created_at: datetime
+    session_id: uuid.UUID
+    kind: EvidenceKind
+    file_url: str
+    note: str | None
+    uploaded_at: datetime
 
 
-class DeliveryReject(BaseModel):
-    reason: str
-
-
-class DeliveryMarkPaid(BaseModel):
-    paid_amount_cents: int | None = None
-
-
-class DeliveryDetailRow(BaseModel):
-    week_number: int
-    batch_date: date
-    client_name: str
-    assigned_count: int
-    exceptions_count: int
-    payable_count: int
-    rate_cents: int
-    amount_due_cents: int
-    payment_status: PaymentStatus
-
-
-class ClientSummaryRow(BaseModel):
-    client_name: str
-    assigned_count: int
-    exceptions_count: int
-    payable_count: int
-    completion_rate: float
-    compensation_cents: int
-
-
-class OverallSummary(BaseModel):
-    assigned_count: int
-    exceptions_count: int
-    payable_count: int
-    completion_rate: float
-    rate_cents: int | None
-    total_compensation_cents: int
-
-
-class PaidItem(BaseModel):
-    batch_date: date
-    client_name: str
-    payable_count: int
-    rate_cents: int
-    amount_cents: int
-
-
-class PaymentReconciliation(BaseModel):
-    total_earned_cents: int
-    already_paid_cents: int
-    outstanding_balance_cents: int
-    paid_items: list[PaidItem]
-
-
-class DriverPayReport(BaseModel):
-    company_name: str
-    driver_id: uuid.UUID
-    driver_name: str
-    period_start: date
-    period_end: date
-    delivery_detail: list[DeliveryDetailRow]
-    client_summary: list[ClientSummaryRow]
-    overall_summary: OverallSummary
-    payment_reconciliation: PaymentReconciliation
+# ---------- Package (optional granular detail) ----------
 
 
 class PackageCreate(BaseModel):
@@ -198,7 +146,7 @@ class PackageOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    delivery_id: uuid.UUID
+    session_id: uuid.UUID
     tracking_code: str
     outcome: PackageOutcome
     source: PackageSource
@@ -213,63 +161,54 @@ class PackageOut(BaseModel):
     created_at: datetime
 
 
-class WebhookEventPayload(BaseModel):
-    """Generic shape expected from an external platform (UniUni/GOFO) webhook.
-
-    Speculative — no real integration exists yet, so this is our own
-    schema, not theirs. A translation layer can sit in front of this if
-    their actual payload format differs once integration is confirmed.
-    """
-
-    driver_external_id: str
-    client_name: str
-    batch_date: date
-    tracking_code: str
-    outcome: PackageOutcome
-    pod_photo_url: str | None = None
-    pod_scan_code: str | None = None
-    pod_latitude: float | None = None
-    pod_longitude: float | None = None
-    return_reason: ReturnReason | None = None
-    return_note: str | None = None
-    external_reference: str | None = None
-
-    @model_validator(mode="after")
-    def _validate_outcome_fields(self):
-        if self.outcome == PackageOutcome.RETURNED and self.return_reason is None:
-            raise ValueError("return_reason is required when outcome is 'returned'")
-        if self.outcome == PackageOutcome.DELIVERED and (
-            self.return_reason is not None or self.return_note is not None
-        ):
-            raise ValueError("return_reason/return_note are only valid when outcome is 'returned'")
-        return self
+# ---------- Work report ----------
 
 
-class WebhookEventResult(BaseModel):
-    status: str
-    delivery_id: uuid.UUID
-    package_id: uuid.UUID
+class WorkReportRecord(BaseModel):
+    route_started: datetime | None
+    route_completed: datetime | None
+    packages_assigned: int
+    packages_completed: int
+    exceptions: int
+    mileage: float | None
 
 
-class DeliveryProof(BaseModel):
-    """Proof that a delivery batch happened — independent of whether the
-    driver has been paid yet. Meant to be shown to the contracting
-    platform (UniUni/GOFO) as evidence, not just to the driver."""
-
-    proof_number: str
-    company_name: str
-    driver_name: str
-    client_name: str
-    batch_date: date
-    assigned_count: int
-    exceptions_count: int
-    payable_count: int
-    rate_cents: int
-    amount_due_cents: int
-    validated_at: datetime
+class WorkReportCompensation(BaseModel):
+    agreed_rate_cents: int
+    expected_gross_cents: int | None
+    payment_due_date: date | None
     payment_status: PaymentStatus
-    paid_amount_cents: int | None
-    paid_at: datetime | None
-    packages_logged: int
-    packages_with_photo: int
-    packages_with_scan_code: int
+    payment_received_cents: int | None
+    payment_received_at: datetime | None
+    difference_cents: int | None
+
+
+class WorkReport(BaseModel):
+    report_number: str
+    driver_name: str
+    carrier_name: str
+    service_date: date
+    route_id: str | None
+    work_record: WorkReportRecord
+    compensation: WorkReportCompensation
+    supporting_records: list[EvidenceOut]
+
+
+# ---------- Payment ledger ----------
+
+
+class LedgerEntry(BaseModel):
+    session_id: uuid.UUID
+    carrier_name: str
+    route_id: str | None
+    service_date: date
+    expected_gross_cents: int
+    payment_received_cents: int | None
+    outstanding_cents: int
+    payment_due_date: date | None
+    payment_status: PaymentStatus
+
+
+class LedgerSummary(BaseModel):
+    outstanding_total_cents: int
+    entries: list[LedgerEntry]

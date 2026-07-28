@@ -5,15 +5,17 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt
 
 from app.models import PaymentStatus
-from app.schemas import DeliveryProof, DriverPayReport
+from app.schemas import WorkReport
 
 
-def _money(cents: int) -> str:
+def _money(cents: int | None) -> str:
+    if cents is None:
+        return "—"
     return f"${cents / 100:,.2f}"
 
 
-def _rate_label(rate_cents: int | None) -> str:
-    return f"{_money(rate_cents)} / delivered package" if rate_cents is not None else "Varies by client"
+def _dt(value) -> str:
+    return value.strftime("%Y-%m-%d %H:%M") if value else "—"
 
 
 def _add_heading(document: Document, text: str) -> None:
@@ -37,222 +39,94 @@ def _key_value_table(document: Document, rows: list[tuple[str, str]]) -> None:
         _set_cell_text(table.rows[i].cells[1], value)
 
 
-def render_driver_pay_report_docx(report: DriverPayReport) -> bytes:
+EVIDENCE_LABELS = {
+    "route_screenshot": "Route screenshot",
+    "rate_screenshot": "Rate screenshot",
+    "gps_session": "GPS session",
+    "completion_record": "Completion record",
+    "settlement_statement": "Settlement statement",
+    "other": "Other document",
+}
+
+
+def render_work_report_docx(report: WorkReport) -> bytes:
     document = Document()
 
     title = document.add_paragraph()
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = title.add_run(report.company_name.upper())
+    run = title.add_run("RINKO — INDEPENDENT WORK RECORD")
     run.bold = True
-    run.font.size = Pt(16)
-
-    subtitle = document.add_paragraph()
-    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = subtitle.add_run("LAST-MILE DELIVERY — DRIVER PERFORMANCE & PAY REPORT")
-    run.bold = True
-    run.font.size = Pt(11)
-
-    _key_value_table(
-        document,
-        [
-            ("Driver:", report.driver_name),
-            ("Reporting Period:", f"{report.period_start} to {report.period_end}"),
-            ("Pay Rate:", _rate_label(report.overall_summary.rate_cents)),
-            ("Operation:", "Last-Mile Delivery"),
-            ("Report Status:", "Final"),
-            ("Prepared By:", report.company_name),
-        ],
-    )
-
-    document.add_paragraph()
-    _add_heading(document, "DELIVERY DETAIL")
-    headers = [
-        "Week",
-        "Date",
-        "Client",
-        "Assigned",
-        "Exceptions / Returns",
-        "Payable Delivered",
-        "Rate",
-        "Amount",
-        "Payment Status",
-    ]
-    table = document.add_table(rows=1, cols=len(headers))
-    table.style = "Table Grid"
-    for cell, header in zip(table.rows[0].cells, headers):
-        _set_cell_text(cell, header, bold=True)
-    for row in report.delivery_detail:
-        cells = table.add_row().cells
-        _set_cell_text(cells[0], f"Week {row.week_number}")
-        _set_cell_text(cells[1], row.batch_date.isoformat())
-        _set_cell_text(cells[2], row.client_name)
-        _set_cell_text(cells[3], str(row.assigned_count))
-        _set_cell_text(cells[4], str(row.exceptions_count))
-        _set_cell_text(cells[5], str(row.payable_count))
-        _set_cell_text(cells[6], _money(row.rate_cents))
-        _set_cell_text(cells[7], _money(row.amount_due_cents))
-        _set_cell_text(cells[8], row.payment_status.value.upper())
-
-    document.add_paragraph()
-    _add_heading(document, "CLIENT SUMMARY")
-    headers = [
-        "Client",
-        "Assigned",
-        "Exceptions / Returns",
-        "Payable Delivered",
-        "Completion Rate",
-        "Compensation",
-    ]
-    table = document.add_table(rows=1, cols=len(headers))
-    table.style = "Table Grid"
-    for cell, header in zip(table.rows[0].cells, headers):
-        _set_cell_text(cell, header, bold=True)
-    for row in report.client_summary:
-        cells = table.add_row().cells
-        _set_cell_text(cells[0], row.client_name)
-        _set_cell_text(cells[1], str(row.assigned_count))
-        _set_cell_text(cells[2], str(row.exceptions_count))
-        _set_cell_text(cells[3], str(row.payable_count))
-        _set_cell_text(cells[4], f"{row.completion_rate:.2f}%")
-        _set_cell_text(cells[5], _money(row.compensation_cents))
-
-    document.add_paragraph()
-    _add_heading(document, "OVERALL SUMMARY")
-    summary = report.overall_summary
-    _key_value_table(
-        document,
-        [
-            ("Packages Assigned", str(summary.assigned_count)),
-            ("Exceptions / Returns", str(summary.exceptions_count)),
-            ("Payable Deliveries", str(summary.payable_count)),
-            ("Overall Delivery Completion Rate", f"{summary.completion_rate:.2f}%"),
-            ("Rate per Delivered Package", _rate_label(summary.rate_cents)),
-            ("TOTAL DRIVER COMPENSATION", _money(summary.total_compensation_cents)),
-        ],
-    )
-
-    document.add_paragraph()
-    table = document.add_table(rows=2, cols=4)
-    table.style = "Table Grid"
-    _set_cell_text(table.rows[0].cells[0], "Driver Signature:", bold=True)
-    _set_cell_text(table.rows[0].cells[2], "Date:", bold=True)
-    _set_cell_text(table.rows[1].cells[0], "Operations Manager Approval:", bold=True)
-    _set_cell_text(table.rows[1].cells[2], "Payment Date:", bold=True)
-
-    document.add_paragraph()
-    _add_heading(document, "PAYMENT RECONCILIATION")
-    reconciliation = report.payment_reconciliation
-    _key_value_table(
-        document,
-        [
-            ("Total Earned", _money(reconciliation.total_earned_cents)),
-            ("Already Paid", _money(reconciliation.already_paid_cents)),
-            ("TOTAL OUTSTANDING BALANCE", _money(reconciliation.outstanding_balance_cents)),
-        ],
-    )
-
-    if reconciliation.paid_items:
-        document.add_paragraph()
-        note = document.add_paragraph()
-        note.add_run("Payment notes:").bold = True
-        for item in reconciliation.paid_items:
-            document.add_paragraph(
-                f"{item.batch_date.isoformat()} — {item.client_name} — "
-                f"{item.payable_count} payable deliveries × {_money(item.rate_cents)} = "
-                f"{_money(item.amount_cents)} — PAID. Included in earned totals and "
-                f"deducted from the outstanding balance.",
-                style="List Bullet",
-            )
-
-    buffer = io.BytesIO()
-    document.save(buffer)
-    return buffer.getvalue()
-
-
-def render_delivery_proof_docx(proof: DeliveryProof) -> bytes:
-    document = Document()
-    is_paid = proof.payment_status == PaymentStatus.PAID
-
-    title = document.add_paragraph()
-    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = title.add_run(proof.company_name.upper())
-    run.bold = True
-    run.font.size = Pt(16)
-
-    subtitle = document.add_paragraph()
-    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = subtitle.add_run("PROOF OF DELIVERY")
-    run.bold = True
-    run.font.size = Pt(13)
+    run.font.size = Pt(15)
 
     ref = document.add_paragraph()
     ref.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = ref.add_run(f"Reference No. {proof.proof_number}")
+    run = ref.add_run(f"Report No. {report.report_number}")
     run.font.size = Pt(10)
 
     document.add_paragraph()
     _key_value_table(
         document,
         [
-            ("Driver:", proof.driver_name),
-            ("Client:", proof.client_name),
-            ("Delivery Date:", proof.batch_date.isoformat()),
-            ("Validated:", proof.validated_at.strftime("%Y-%m-%d %H:%M UTC")),
-            (
-                "Payment Status:",
-                f"PAID — {proof.paid_at.strftime('%Y-%m-%d %H:%M UTC')}"
-                if is_paid
-                else "PENDING",
-            ),
+            ("Driver:", report.driver_name),
+            ("Carrier / Contractor:", report.carrier_name),
+            ("Service date:", report.service_date.isoformat()),
+            ("Route ID:", report.route_id or "—"),
         ],
     )
 
     document.add_paragraph()
-    _add_heading(document, "AMOUNT")
+    _add_heading(document, "WORK RECORD")
+    wr = report.work_record
     _key_value_table(
         document,
         [
-            ("Assigned", str(proof.assigned_count)),
-            ("Exceptions / Returns", str(proof.exceptions_count)),
-            ("Payable Delivered", str(proof.payable_count)),
-            ("Rate", _money(proof.rate_cents)),
-            ("AMOUNT DUE", _money(proof.amount_due_cents)),
-        ]
-        + ([("Amount Paid", _money(proof.paid_amount_cents))] if is_paid else []),
-    )
-
-    document.add_paragraph()
-    _add_heading(document, "PROOF OF DELIVERY ON RECORD")
-    _key_value_table(
-        document,
-        [
-            ("Packages logged", str(proof.packages_logged)),
-            ("With photo proof", str(proof.packages_with_photo)),
-            ("With confirmation scan", str(proof.packages_with_scan_code)),
+            ("Route started", _dt(wr.route_started)),
+            ("Route completed", _dt(wr.route_completed)),
+            ("Packages assigned", str(wr.packages_assigned)),
+            ("Packages completed", str(wr.packages_completed)),
+            ("Exceptions", str(wr.exceptions)),
+            ("Distance", f"{wr.mileage} mi" if wr.mileage is not None else "—"),
         ],
     )
 
     document.add_paragraph()
-    note = document.add_paragraph()
-    payment_clause = (
-        f"and paid to the driver on {proof.paid_at.strftime('%Y-%m-%d')}"
-        if is_paid
-        else "with payment to the driver still pending"
-    )
-    note.add_run(
-        f"This document certifies that {proof.payable_count} payable deliveries were completed "
-        f"for {proof.client_name} by {proof.driver_name} on {proof.batch_date.isoformat()}, "
-        f"validated in the Rinko Delivery Payment system {payment_clause}. Provided as evidence "
-        "of delivery completion."
-    ).italic = True
+    _add_heading(document, "COMPENSATION RECORD")
+    comp = report.compensation
+    rows = [
+        ("Agreed rate", f"{_money(comp.agreed_rate_cents)}/pkg"),
+        ("Expected gross", _money(comp.expected_gross_cents)),
+        ("Payment due", comp.payment_due_date.isoformat() if comp.payment_due_date else "—"),
+        ("Payment status", comp.payment_status.value.upper()),
+    ]
+    if comp.payment_status != PaymentStatus.PENDING:
+        rows.append(("Payment received", _money(comp.payment_received_cents)))
+        rows.append(("Received on", _dt(comp.payment_received_at)))
+        if comp.difference_cents is not None and comp.difference_cents != 0:
+            rows.append(("DIFFERENCE", _money(comp.difference_cents)))
+    _key_value_table(document, rows)
 
     document.add_paragraph()
-    table = document.add_table(rows=2, cols=4)
-    table.style = "Table Grid"
-    _set_cell_text(table.rows[0].cells[0], "Driver Signature:", bold=True)
-    _set_cell_text(table.rows[0].cells[2], "Date:", bold=True)
-    _set_cell_text(table.rows[1].cells[0], "Verified By:", bold=True)
-    _set_cell_text(table.rows[1].cells[2], "Date:", bold=True)
+    _add_heading(document, "SUPPORTING RECORDS")
+    if report.supporting_records:
+        for item in report.supporting_records:
+            label = EVIDENCE_LABELS.get(item.kind.value, item.kind.value)
+            text = f"✓ {label}"
+            if item.note:
+                text += f" — {item.note}"
+            document.add_paragraph(text, style="List Bullet")
+    else:
+        document.add_paragraph("No supporting documents attached to this session.")
+
+    if comp.difference_cents is not None and comp.difference_cents != 0:
+        document.add_paragraph()
+        note = document.add_paragraph()
+        note.add_run(
+            f"Payment received ({_money(comp.payment_received_cents)}) differs from the expected "
+            f"gross ({_money(comp.expected_gross_cents)}) by {_money(comp.difference_cents)}. "
+            "This record documents the discrepancy contemporaneously; it does not by itself "
+            "constitute conclusive proof in a dispute — authenticity, contract terms, and "
+            "evidentiary rules still apply."
+        ).italic = True
 
     buffer = io.BytesIO()
     document.save(buffer)

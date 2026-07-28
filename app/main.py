@@ -4,26 +4,22 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.routers import auth, clients, companies, deliveries, drivers, me, packages, reports, webhooks
+from app.routers import auth, carriers, ledger, sessions
 
 app = FastAPI(
-    title="Rinko Delivery Payment API",
+    title="Rinko — Independent Driver Work Record",
     description=(
-        "Registers deliveries, validates them, and calculates how much each "
-        "driver is owed per package."
+        "An independent, verifiable record of work performed by a delivery "
+        "driver, kept separate from the contracting carrier's own system. "
+        "Your routes. Your work. Your records."
     ),
     version="0.1.0",
 )
 
-app.include_router(companies.router)
-app.include_router(drivers.router)
-app.include_router(clients.router)
-app.include_router(deliveries.router)
-app.include_router(packages.router)
-app.include_router(reports.router)
 app.include_router(auth.router)
-app.include_router(me.router)
-app.include_router(webhooks.router)
+app.include_router(carriers.router)
+app.include_router(sessions.router)
+app.include_router(ledger.router)
 
 Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")

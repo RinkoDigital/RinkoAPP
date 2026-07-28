@@ -2,22 +2,22 @@ import enum
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, Enum, ForeignKey, String, UniqueConstraint
+from sqlalchemy import Date, Enum, Float, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
 
 
-class DeliveryStatus(str, enum.Enum):
-    PENDING = "pending"
-    VALIDATED = "validated"
-    REJECTED = "rejected"
+class WorkSessionStatus(str, enum.Enum):
+    OPEN = "open"
+    CLOSED = "closed"
 
 
 class PaymentStatus(str, enum.Enum):
     PENDING = "pending"
-    PAID = "paid"
+    PARTIAL = "partial"
+    RECEIVED = "received"
 
 
 class PackageOutcome(str, enum.Enum):
@@ -42,116 +42,153 @@ class PackageSource(str, enum.Enum):
     OTHER_PLATFORM = "other_platform"
 
 
-class Company(Base):
-    __tablename__ = "companies"
-
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    api_key_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
-    webhook_secret_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    default_rate_cents: Mapped[int] = mapped_column(nullable=False, default=3)
-    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
-
-    drivers: Mapped[list["Driver"]] = relationship(back_populates="company")
-    clients: Mapped[list["Client"]] = relationship(back_populates="company")
-    deliveries: Mapped[list["Delivery"]] = relationship(back_populates="company")
+class EvidenceKind(str, enum.Enum):
+    ROUTE_SCREENSHOT = "route_screenshot"
+    RATE_SCREENSHOT = "rate_screenshot"
+    GPS_SESSION = "gps_session"
+    COMPLETION_RECORD = "completion_record"
+    SETTLEMENT_STATEMENT = "settlement_statement"
+    OTHER = "other"
 
 
 class Driver(Base):
+    """An independent driver — the root account. Not owned by any company."""
+
     __tablename__ = "drivers"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    email: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
-    external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    invite_token: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
-    invite_expires_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
-    company: Mapped["Company"] = relationship(back_populates="drivers")
-    deliveries: Mapped[list["Delivery"]] = relationship(back_populates="driver")
-
-    __table_args__ = (
-        UniqueConstraint("company_id", "external_id", name="uq_driver_company_external_id"),
-    )
-
-    @property
-    def has_account(self) -> bool:
-        return self.password_hash is not None
+    carriers: Mapped[list["Carrier"]] = relationship(back_populates="driver")
+    sessions: Mapped[list["WorkSession"]] = relationship(back_populates="driver")
 
 
-class Client(Base):
-    """A partner the company delivers packages for (e.g. UniUni, GOFO)."""
+class Carrier(Base):
+    """A contracting company the driver works routes for (e.g. UniUni, GOFO, OnTrac).
 
-    __tablename__ = "clients"
+    Owned by the driver who logged it — not a shared/global directory. Two
+    drivers each logging "UniUni" get two independent Carrier rows; there is
+    no central authority reconciling them, by design.
+    """
+
+    __tablename__ = "carriers"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
+    driver_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("drivers.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     default_rate_cents: Mapped[int | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
-    company: Mapped["Company"] = relationship(back_populates="clients")
-    deliveries: Mapped[list["Delivery"]] = relationship(back_populates="client")
+    driver: Mapped["Driver"] = relationship(back_populates="carriers")
+    sessions: Mapped[list["WorkSession"]] = relationship(back_populates="carrier")
 
     __table_args__ = (
-        UniqueConstraint("company_id", "name", name="uq_client_company_name"),
+        UniqueConstraint("driver_id", "name", name="uq_carrier_driver_name"),
     )
 
 
-class Delivery(Base):
-    """A driver's delivery batch for one client on one day."""
+class WorkSession(Base):
+    """One route/shift worked for one carrier — the independent work record."""
 
-    __tablename__ = "deliveries"
+    __tablename__ = "work_sessions"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"), nullable=False)
-    client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id"), nullable=False)
     driver_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("drivers.id"), nullable=False)
-    batch_date: Mapped[date] = mapped_column(Date, nullable=False)
-    assigned_count: Mapped[int] = mapped_column(nullable=False)
-    exceptions_count: Mapped[int] = mapped_column(nullable=False, default=0)
-    status: Mapped[DeliveryStatus] = mapped_column(
-        Enum(DeliveryStatus, native_enum=False), nullable=False, default=DeliveryStatus.PENDING
-    )
-    rate_cents: Mapped[int] = mapped_column(nullable=False)
-    amount_due_cents: Mapped[int | None] = mapped_column(nullable=True)
-    rejection_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    payment_status: Mapped[PaymentStatus] = mapped_column(
-        Enum(PaymentStatus, native_enum=False), nullable=False, default=PaymentStatus.PENDING
-    )
-    paid_amount_cents: Mapped[int | None] = mapped_column(nullable=True)
-    paid_at: Mapped[datetime | None] = mapped_column(nullable=True)
-    validated_at: Mapped[datetime | None] = mapped_column(nullable=True)
-    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    carrier_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("carriers.id"), nullable=False)
+    route_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    service_date: Mapped[date] = mapped_column(Date, nullable=False)
+    start_time: Mapped[datetime | None] = mapped_column(nullable=True)
+    end_time: Mapped[datetime | None] = mapped_column(nullable=True)
 
-    company: Mapped["Company"] = relationship(back_populates="deliveries")
-    client: Mapped["Client"] = relationship(back_populates="deliveries")
-    driver: Mapped["Driver"] = relationship(back_populates="deliveries")
+    packages_assigned: Mapped[int] = mapped_column(nullable=False, default=0)
+    exceptions_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    mileage: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    agreed_rate_cents: Mapped[int] = mapped_column(nullable=False)
+    expected_gross_cents: Mapped[int | None] = mapped_column(nullable=True)
+
+    status: Mapped[WorkSessionStatus] = mapped_column(
+        Enum(WorkSessionStatus, native_enum=False), nullable=False, default=WorkSessionStatus.OPEN
+    )
+
+    payment_due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    payment_received_cents: Mapped[int | None] = mapped_column(nullable=True)
+    payment_received_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    closed_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+    driver: Mapped["Driver"] = relationship(back_populates="sessions")
+    carrier: Mapped["Carrier"] = relationship(back_populates="sessions")
+    evidence: Mapped[list["Evidence"]] = relationship(
+        back_populates="session", order_by="Evidence.uploaded_at"
+    )
     packages: Mapped[list["Package"]] = relationship(
-        back_populates="delivery", order_by="Package.created_at"
+        back_populates="session", order_by="Package.created_at"
     )
 
     __table_args__ = (
         UniqueConstraint(
-            "driver_id", "client_id", "batch_date", name="uq_delivery_driver_client_date"
+            "driver_id", "carrier_id", "route_id", "service_date",
+            name="uq_session_driver_carrier_route_date",
         ),
     )
 
     @property
-    def payable_count(self) -> int:
-        return self.assigned_count - self.exceptions_count
+    def packages_completed(self) -> int:
+        return self.packages_assigned - self.exceptions_count
+
+    @property
+    def difference_cents(self) -> int | None:
+        if self.payment_received_cents is None or self.expected_gross_cents is None:
+            return None
+        return self.payment_received_cents - self.expected_gross_cents
+
+    @property
+    def payment_status(self) -> PaymentStatus:
+        if self.payment_received_cents is None:
+            return PaymentStatus.PENDING
+        if self.expected_gross_cents is not None and self.payment_received_cents >= self.expected_gross_cents:
+            return PaymentStatus.RECEIVED
+        return PaymentStatus.PARTIAL
+
+    @property
+    def outstanding_cents(self) -> int:
+        """How much is still owed on this session (0 if closed and fully paid or still open)."""
+        if self.expected_gross_cents is None:
+            return 0
+        received = self.payment_received_cents or 0
+        return max(self.expected_gross_cents - received, 0)
+
+
+class Evidence(Base):
+    """A supporting document attached to a work session — route screenshot,
+    rate screenshot, GPS export, settlement statement, etc."""
+
+    __tablename__ = "evidence"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("work_sessions.id"), nullable=False)
+    kind: Mapped[EvidenceKind] = mapped_column(Enum(EvidenceKind, native_enum=False), nullable=False)
+    file_url: Mapped[str] = mapped_column(String(500), nullable=False)
+    note: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    uploaded_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    session: Mapped["WorkSession"] = relationship(back_populates="evidence")
 
 
 class Package(Base):
-    """An individual package within a delivery batch — proof of delivery or return detail."""
+    """Optional per-package detail within a work session — proof of delivery
+    or return detail, for drivers who want finer-grained evidence than the
+    session-level assigned/exceptions counts."""
 
     __tablename__ = "packages"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    delivery_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("deliveries.id"), nullable=False)
+    session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("work_sessions.id"), nullable=False)
     tracking_code: Mapped[str] = mapped_column(String(255), nullable=False)
     outcome: Mapped[PackageOutcome] = mapped_column(
         Enum(PackageOutcome, native_enum=False), nullable=False
@@ -161,14 +198,12 @@ class Package(Base):
     )
     external_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    # Proof of delivery (outcome = DELIVERED)
     pod_photo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     pod_scan_code: Mapped[str | None] = mapped_column(String(255), nullable=True)
     pod_captured_at: Mapped[datetime | None] = mapped_column(nullable=True)
     pod_latitude: Mapped[float | None] = mapped_column(nullable=True)
     pod_longitude: Mapped[float | None] = mapped_column(nullable=True)
 
-    # Return detail (outcome = RETURNED)
     return_reason: Mapped[ReturnReason | None] = mapped_column(
         Enum(ReturnReason, native_enum=False), nullable=True
     )
@@ -176,8 +211,8 @@ class Package(Base):
 
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
-    delivery: Mapped["Delivery"] = relationship(back_populates="packages")
+    session: Mapped["WorkSession"] = relationship(back_populates="packages")
 
     __table_args__ = (
-        UniqueConstraint("delivery_id", "tracking_code", name="uq_package_delivery_tracking_code"),
+        UniqueConstraint("session_id", "tracking_code", name="uq_package_session_tracking_code"),
     )
