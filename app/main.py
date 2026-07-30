@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.routers import auth, carriers, ledger, sessions
+from app.routers import account, auth, carriers, ledger, sessions
 
 app = FastAPI(
     title="Rinko — Independent Driver Work Record",
@@ -17,6 +17,7 @@ app = FastAPI(
 )
 
 app.include_router(auth.router)
+app.include_router(account.router)
 app.include_router(carriers.router)
 app.include_router(sessions.router)
 app.include_router(ledger.router)

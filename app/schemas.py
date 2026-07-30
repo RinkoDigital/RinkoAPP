@@ -3,7 +3,15 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from app.models import EvidenceKind, PackageOutcome, PackageSource, PaymentStatus, ReturnReason, WorkSessionStatus
+from app.models import (
+    EvidenceKind,
+    PackageOutcome,
+    PackageSource,
+    PaymentStatus,
+    PlanTier,
+    ReturnReason,
+    WorkSessionStatus,
+)
 
 
 # ---------- Auth / Driver ----------
@@ -26,6 +34,7 @@ class DriverOut(BaseModel):
     id: uuid.UUID
     name: str
     email: str
+    plan: PlanTier
     created_at: datetime
 
 
@@ -33,6 +42,16 @@ class DriverToken(BaseModel):
     access_token: str
     token_type: str = "bearer"
     driver: DriverOut
+
+
+class PlanUpdate(BaseModel):
+    plan: PlanTier
+
+
+class PlanInfo(BaseModel):
+    plan: PlanTier
+    docx_export: bool
+    evidence_per_session_limit: int | None
 
 
 # ---------- Carrier ----------

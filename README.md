@@ -72,6 +72,8 @@ motoristas cadastrando "UniUni" têm dois registros independentes.
 |---|---|---|---|
 | POST | `/auth/signup` | público | Motorista cria a própria conta → token |
 | POST | `/auth/login` | público | Login (email + senha) → token |
+| GET | `/account/plan` | driver token | Consulta o plano atual e o que ele libera |
+| POST | `/account/plan` | driver token | Troca de plano (`free`/`pro`) — hoje é uma flag manual, sem billing real |
 | POST | `/carriers` | driver token | Registra uma contratante (ex.: UniUni) |
 | GET | `/carriers` | driver token | Lista as contratantes do motorista |
 | POST | `/sessions` | driver token | Inicia uma work session (`open`) |
@@ -128,6 +130,31 @@ sessões. Os documentos de evidência (`Evidence.file_url`) continuam
 baixáveis diretamente. Se a promessa da Rinko é dar ao motorista
 independência sobre o próprio histórico, prender esse histórico dentro de
 outro sistema fechado contradiz a proposta.
+
+## Planos: Free vs. Pro
+
+Todo `Driver` nasce no plano `free` (`Driver.plan`). O que fica de fora do
+plano pago é deliberadamente pequeno, porque o registro em si — o que
+prova o trabalho — não pode ser a parte paga:
+
+**Sempre grátis, em qualquer plano:**
+- O Work Report em JSON (`GET /sessions/{id}/work-report`)
+- A exportação em CSV (`GET /sessions/export.csv`)
+- O Payment Ledger (`GET /ledger`)
+- Registro ilimitado de sessions, carriers e packages
+
+**Reservado ao plano `pro`:**
+- Exportação do Work Report formatado em `.docx`
+  (`GET /sessions/{id}/work-report.docx` → `402 Payment Required` no free)
+- Evidence acima de 3 arquivos por sessão (`POST /sessions/{id}/evidence`
+  → `402 Payment Required` a partir do 4º no free; ilimitado no pro)
+
+A política de gating fica centralizada em `app/plans.py`
+(`can_export_docx`, `evidence_limit`). `POST /account/plan` hoje é uma
+troca manual de flag — **não existe integração de billing real ainda**
+(sem Stripe, sem cobrança recorrente); é o mesmo tipo de placeholder que o
+MVP já usa para "pagamento recebido" em geral. Ligar isso a um provedor de
+pagamento de verdade é um dos itens antes de qualquer lançamento público.
 
 ## Rodando localmente
 

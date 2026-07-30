@@ -51,6 +51,11 @@ class EvidenceKind(str, enum.Enum):
     OTHER = "other"
 
 
+class PlanTier(str, enum.Enum):
+    FREE = "free"
+    PRO = "pro"
+
+
 class Driver(Base):
     """An independent driver — the root account. Not owned by any company."""
 
@@ -60,6 +65,9 @@ class Driver(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    plan: Mapped[PlanTier] = mapped_column(
+        Enum(PlanTier, native_enum=False), nullable=False, default=PlanTier.FREE
+    )
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     carriers: Mapped[list["Carrier"]] = relationship(back_populates="driver")

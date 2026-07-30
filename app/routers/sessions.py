@@ -16,6 +16,7 @@ from app.models import (
     WorkSession,
     WorkSessionStatus,
 )
+from app.plans import can_export_docx, evidence_limit
 from app.report_docx import render_work_report_docx
 from app.schemas import (
     EvidenceOut,
@@ -248,6 +249,17 @@ def upload_evidence(
     driver: Driver = Depends(get_current_driver),
 ):
     session = _get_session(db, driver, session_id)
+
+    limit = evidence_limit(driver.plan)
+    if limit is not None and len(session.evidence) >= limit:
+        raise HTTPException(
+            status_code=402,
+            detail=(
+                f"Free plan is limited to {limit} evidence files per session. "
+                "Upgrade to Rinko Pro for unlimited evidence storage."
+            ),
+        )
+
     evidence = Evidence(session_id=session.id, kind=kind, note=note, file_url="")
     db.add(evidence)
     db.flush()
@@ -319,6 +331,12 @@ def get_work_report_docx(
     db: Session = Depends(get_db),
     driver: Driver = Depends(get_current_driver),
 ):
+    if not can_export_docx(driver.plan):
+        raise HTTPException(
+            status_code=402,
+            detail="Formatted .docx export is a Rinko Pro feature. The JSON report stays free — see /sessions/{id}/work-report.",
+        )
+
     session = _get_session(db, driver, session_id)
     report = build_work_report(session)
     docx_bytes = render_work_report_docx(report)
