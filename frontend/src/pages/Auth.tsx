@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
+import { KitsuneMask } from "../components/KitsuneMask";
 
 export function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -56,6 +57,9 @@ export function AuthPage() {
         />
 
         <div style={{ textAlign: "center", marginBottom: 36, position: "relative", zIndex: 1 }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+            <KitsuneMask />
+          </div>
           <div className="wordmark" style={{ fontSize: "2rem", color: "var(--crimson-glow)" }}>
             RINKO
           </div>
