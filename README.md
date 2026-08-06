@@ -192,6 +192,13 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
+## Front-end
+
+`frontend/` — app React + Vite (TypeScript) que consome essa API, com o
+mesmo tema visual dos mockups. Roda como web app hoje; tem Capacitor já
+configurado pra virar app nativo iOS/Android assim que rodar o build numa
+máquina com Xcode/Android Studio. Ver `frontend/README.md` pra instruções.
+
 ## Testes
 
 ```bash
