@@ -1,25 +1,26 @@
 """Plan tiers and what they gate.
 
-Only value-added convenience is gated — never the driver's own data. JSON
-work reports, CSV export, and the payment ledger are free on every plan,
-full stop; that's the product's independence promise. Free vs. Pro only
-changes formatted document generation and how much evidence storage a
-driver gets before Rinko's own infra costs matter.
+Only value-added convenience was ever meant to be gated — never the
+driver's own data. JSON work reports, CSV export, and the payment ledger
+are free on every plan, full stop; that's the product's independence
+promise.
 
-No billing integration exists yet (same call the MVP made about payments
-in general — no Stripe/Wise at this stage). `Driver.plan` is a manual
-flag for now, flipped via POST /account/plan; wiring it to real billing
-is future work.
+BILLING IS CURRENTLY DISABLED: there's no real payment integration
+(Stripe or otherwise) yet, and the product decision — while still
+validating whether the Work Report alone is worth paying for — is to
+keep everything free rather than gate features behind a plan nobody can
+actually buy. So every tier resolves to the same, unrestricted limits
+below. `Driver.plan` and the `/account/plan` endpoint still exist (a
+driver can be flagged "pro"), but it currently has no effect — flip
+FREE's numbers back to real limits once billing exists.
 """
 
 from app.models import PlanTier
 
-FREE_EVIDENCE_PER_SESSION = 3
-
 PLAN_LIMITS = {
     PlanTier.FREE: {
-        "docx_export": False,
-        "evidence_per_session": FREE_EVIDENCE_PER_SESSION,
+        "docx_export": True,
+        "evidence_per_session": None,  # unlimited
     },
     PlanTier.PRO: {
         "docx_export": True,

@@ -1,40 +1,11 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api, ApiError, getAuthToken } from "../api/client";
-import type { PlanInfo } from "../api/types";
+import { api, getAuthToken } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { BottomNav } from "../components/BottomNav";
 
 export function AccountPage() {
   const { driver, logout } = useAuth();
   const navigate = useNavigate();
-  const [plan, setPlan] = useState<PlanInfo | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [switching, setSwitching] = useState(false);
-
-  function loadPlan() {
-    api
-      .get<PlanInfo>("/account/plan")
-      .then(setPlan)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load plan"));
-  }
-
-  useEffect(loadPlan, []);
-
-  async function togglePlan() {
-    if (!plan) return;
-    setSwitching(true);
-    setError(null);
-    try {
-      const next = plan.plan === "free" ? "pro" : "free";
-      const updated = await api.post<PlanInfo>("/account/plan", { plan: next });
-      setPlan(updated);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to switch plan");
-    } finally {
-      setSwitching(false);
-    }
-  }
 
   function handleExportCsv() {
     const token = getAuthToken();
@@ -60,8 +31,6 @@ export function AccountPage() {
         <h1>Perfil</h1>
       </div>
       <div className="screen">
-        {error && <div className="error-banner">{error}</div>}
-
         <div className="card">
           <strong>{driver?.name}</strong>
           <div className="faint">{driver?.email}</div>
@@ -76,34 +45,12 @@ export function AccountPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ margin: 0 }}>Plano</h3>
             <span className="pill pill-good" style={{ textTransform: "uppercase" }}>
-              {plan?.plan ?? "…"}
+              Grátis
             </span>
           </div>
-          <ul style={{ paddingLeft: 18, color: "var(--text-muted)", fontSize: "0.88rem" }}>
-            <li>Work Report (JSON), CSV e Ledger: sempre grátis</li>
-            <li>
-              Exportação .docx:{" "}
-              {plan?.docx_export ? "liberada" : <span className="locked-badge">Pro</span>}
-            </li>
-            <li>
-              Evidence por sessão:{" "}
-              {plan?.evidence_per_session_limit === null
-                ? "ilimitado"
-                : `até ${plan?.evidence_per_session_limit ?? "…"}`}
-            </li>
-          </ul>
-          <button className="btn btn-secondary" onClick={togglePlan} disabled={switching || !plan}>
-            {switching ? (
-              <span className="spinner" />
-            ) : plan?.plan === "free" ? (
-              "Fazer upgrade para Pro"
-            ) : (
-              "Voltar para Free"
-            )}
-          </button>
-          <p className="faint" style={{ marginTop: 10 }}>
-            Sem billing real ainda — isso troca a flag do plano manualmente, como placeholder até
-            existir um provedor de pagamento.
+          <p className="faint" style={{ marginTop: 4 }}>
+            A Rinko está gratuita, sem limites, enquanto validamos o produto — Work Report, CSV,
+            Ledger, exportação em .docx e evidence continuam liberados pra todo mundo.
           </p>
         </div>
 

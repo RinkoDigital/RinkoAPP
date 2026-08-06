@@ -66,18 +66,9 @@ def test_report_shows_difference_after_partial_payment(client, driver_and_header
     assert report["compensation"]["difference_cents"] == 21960 - 141 * 170
 
 
-def test_report_docx_download_requires_pro_plan(client, driver_and_headers, carrier):
-    _, headers = driver_and_headers
-    session = _create_and_close_session(client, headers, carrier)
-
-    resp = client.get(f"/sessions/{session['id']}/work-report.docx", headers=headers)
-    assert resp.status_code == 402
-
-
 def test_report_docx_download(client, driver_and_headers, carrier):
     _, headers = driver_and_headers
     session = _create_and_close_session(client, headers, carrier)
-    client.post("/account/plan", json={"plan": "pro"}, headers=headers)
 
     resp = client.get(f"/sessions/{session['id']}/work-report.docx", headers=headers)
     assert resp.status_code == 200

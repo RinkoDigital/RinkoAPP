@@ -154,30 +154,25 @@ baixáveis diretamente. Se a promessa da Rinko é dar ao motorista
 independência sobre o próprio histórico, prender esse histórico dentro de
 outro sistema fechado contradiz a proposta.
 
-## Planos: Free vs. Pro
+## Planos: Free vs. Pro (billing desativado por enquanto)
 
-Todo `Driver` nasce no plano `free` (`Driver.plan`). O que fica de fora do
-plano pago é deliberadamente pequeno, porque o registro em si — o que
-prova o trabalho — não pode ser a parte paga:
+Existe uma estrutura de planos (`Driver.plan`, `FREE`/`PRO`, endpoints
+`GET`/`POST /account/plan`) desenhada pra separar o que é sempre grátis
+(Work Report em JSON, CSV, Payment Ledger — o registro em si nunca é a
+parte paga) do que poderia ser reservado a um plano pago (`.docx`
+formatado, evidence acima de um limite por sessão).
 
-**Sempre grátis, em qualquer plano:**
-- O Work Report em JSON (`GET /sessions/{id}/work-report`)
-- A exportação em CSV (`GET /sessions/export.csv`)
-- O Payment Ledger (`GET /ledger`)
-- Registro ilimitado de sessions, carriers e packages
+**Por decisão de produto, o gating está desligado agora**: não existe
+integração de billing real (sem Stripe, sem cobrança), e a prioridade
+atual é validar se o Work Report resolve dor suficiente antes de cobrar
+por qualquer coisa — então todo mundo tem acesso completo, `.docx` e
+evidence ilimitados, independente do valor de `Driver.plan`. Isso está
+centralizado em `app/plans.py` (`PLAN_LIMITS`) — free e pro apontam pros
+mesmos limites (irrestritos) até essa decisão mudar.
 
-**Reservado ao plano `pro`:**
-- Exportação do Work Report formatado em `.docx`
-  (`GET /sessions/{id}/work-report.docx` → `402 Payment Required` no free)
-- Evidence acima de 3 arquivos por sessão (`POST /sessions/{id}/evidence`
-  → `402 Payment Required` a partir do 4º no free; ilimitado no pro)
-
-A política de gating fica centralizada em `app/plans.py`
-(`can_export_docx`, `evidence_limit`). `POST /account/plan` hoje é uma
-troca manual de flag — **não existe integração de billing real ainda**
-(sem Stripe, sem cobrança recorrente); é o mesmo tipo de placeholder que o
-MVP já usa para "pagamento recebido" em geral. Ligar isso a um provedor de
-pagamento de verdade é um dos itens antes de qualquer lançamento público.
+Quando fizer sentido cobrar, é só devolver `PLAN_LIMITS[FREE]` pros
+limites reais e plugar um provedor de pagamento em `POST /account/plan`
+(hoje é só uma troca manual de flag).
 
 ## Rodando localmente
 
