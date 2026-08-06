@@ -26,8 +26,13 @@ export function HomePage() {
 
   return (
     <div className="app-shell">
-      <div className="top-bar">
-        <h1>Boa tarde, {firstName}</h1>
+      <div className="top-bar decorated">
+        <div
+          className="glow"
+          aria-hidden="true"
+          style={{ top: -90, right: -40, width: 180, height: 180 }}
+        />
+        <h1 style={{ position: "relative", zIndex: 1 }}>Boa tarde, {firstName}</h1>
       </div>
       <div className="screen">
         {error && <div className="error-banner">{error}</div>}

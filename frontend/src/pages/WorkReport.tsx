@@ -73,11 +73,21 @@ export function WorkReportPage() {
         </button>
       </div>
       <div className="screen">
-        <div className="card">
-          <div className="wordmark" style={{ color: "var(--crimson-glow)", fontSize: "0.9rem" }}>
+        <div className="card decorated">
+          <div
+            className="glow"
+            aria-hidden="true"
+            style={{ top: -70, left: "50%", transform: "translateX(-50%)", width: 220, height: 220 }}
+          />
+          <div
+            className="wordmark"
+            style={{ color: "var(--crimson-glow)", fontSize: "0.9rem", position: "relative", zIndex: 1 }}
+          >
             RINKO — INDEPENDENT WORK RECORD
           </div>
-          <div className="faint" style={{ marginTop: 4 }}>{report.report_number}</div>
+          <div className="faint" style={{ marginTop: 4, position: "relative", zIndex: 1 }}>
+            {report.report_number}
+          </div>
 
           <div className="row">
             <span className="label">Driver</span>

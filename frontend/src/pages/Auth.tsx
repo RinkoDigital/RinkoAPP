@@ -33,8 +33,29 @@ export function AuthPage() {
 
   return (
     <div className="app-shell">
-      <div className="screen" style={{ display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "100%" }}>
-        <div style={{ textAlign: "center", marginBottom: 36 }}>
+      <div
+        className="screen"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          minHeight: "100%",
+          position: "relative",
+        }}
+      >
+        <div
+          className="glow"
+          aria-hidden="true"
+          style={{ top: -140, left: "50%", transform: "translateX(-50%)", width: 320, height: 320 }}
+        />
+        <div className="petal" aria-hidden="true" style={{ top: 20, left: "26%" }} />
+        <div
+          className="petal"
+          aria-hidden="true"
+          style={{ top: 44, right: "24%", transform: "rotate(-20deg)", opacity: 0.35 }}
+        />
+
+        <div style={{ textAlign: "center", marginBottom: 36, position: "relative", zIndex: 1 }}>
           <div className="wordmark" style={{ fontSize: "2rem", color: "var(--crimson-glow)" }}>
             RINKO
           </div>
@@ -43,7 +64,7 @@ export function AuthPage() {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card" style={{ position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", marginBottom: 18, borderBottom: "1px solid var(--line)" }}>
             <button
               type="button"

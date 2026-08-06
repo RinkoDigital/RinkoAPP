@@ -65,6 +65,43 @@ a {
   color: var(--crimson-glow);
 }
 
+/* ---------- Decorative motifs (hero/header only — never on data screens) ---------- */
+
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 55%,
+    rgba(200, 31, 52, 0.45),
+    rgba(200, 31, 52, 0.08) 45%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.petal {
+  position: absolute;
+  width: 6px;
+  height: 8px;
+  border-radius: 60% 60% 60% 0;
+  background: var(--sakura);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.wave-strip {
+  height: 16px;
+  background-image: radial-gradient(
+    circle at 9px 0,
+    transparent 8px,
+    var(--crimson-deep) 9px,
+    transparent 10px
+  );
+  background-size: 20px 16px;
+  background-repeat: repeat-x;
+  opacity: 0.28;
+}
+
 .app-shell {
   max-width: 480px;
   margin: 0 auto;
@@ -231,6 +268,12 @@ a {
   align-items: center;
   justify-content: space-between;
   padding: 18px 20px 6px;
+}
+
+/* Applied to the few headers that carry the brand glow (Home, Work Report) */
+.decorated {
+  position: relative;
+  overflow: hidden;
 }
 
 .top-bar h1 {
