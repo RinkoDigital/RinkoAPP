@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Rinko</string>
+    <string name="title_activity_main">Rinko</string>
+    <string name="package_name">com.rinkodigital.app</string>
+    <string name="custom_url_scheme">com.rinkodigital.app</string>
+</resources>
