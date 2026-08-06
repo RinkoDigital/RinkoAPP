@@ -34,6 +34,7 @@ class DriverOut(BaseModel):
     id: uuid.UUID
     name: str
     email: str
+    email_verified: bool
     plan: PlanTier
     created_at: datetime
 
@@ -42,6 +43,23 @@ class DriverToken(BaseModel):
     access_token: str
     token_type: str = "bearer"
     driver: DriverOut
+
+
+class EmailVerifyRequest(BaseModel):
+    token: str
+
+
+class ResendVerificationRequest(BaseModel):
+    email: str
+
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str
 
 
 class PlanUpdate(BaseModel):

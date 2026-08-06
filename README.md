@@ -70,8 +70,12 @@ motoristas cadastrando "UniUni" têm dois registros independentes.
 
 | Método | Rota | Auth | Descrição |
 |---|---|---|---|
-| POST | `/auth/signup` | público | Motorista cria a própria conta → token |
+| POST | `/auth/signup` | público | Motorista cria a própria conta → token (dispara email de verificação) |
 | POST | `/auth/login` | público | Login (email + senha) → token |
+| POST | `/auth/verify-email` | público | Confirma o email a partir do token enviado no signup |
+| POST | `/auth/resend-verification` | público | Reenvia o email de verificação (resposta genérica, não revela se a conta existe) |
+| POST | `/auth/request-password-reset` | público | Solicita reset de senha (resposta genérica, não revela se a conta existe) |
+| POST | `/auth/reset-password` | público | Confirma o reset com o token recebido e define a nova senha |
 | GET | `/account/plan` | driver token | Consulta o plano atual e o que ele libera |
 | POST | `/account/plan` | driver token | Troca de plano (`free`/`pro`) — hoje é uma flag manual, sem billing real |
 | POST | `/carriers` | driver token | Registra uma contratante (ex.: UniUni) |
@@ -93,6 +97,25 @@ motoristas cadastrando "UniUni" têm dois registros independentes.
 
 Autenticação via header `Authorization: Bearer <token>`, obtido no
 signup/login.
+
+### Verificação de email e reset de senha
+
+O signup já dispara um token de verificação de email; o login **não**
+exige o email verificado ainda — isso fica marcado em `Driver.email_verified`
+pra o produto decidir depois se quer travar alguma ação nisso, sem
+adicionar fricção ao MVP agora.
+
+O reset de senha funciona de ponta a ponta: `POST /auth/request-password-reset`
+gera um token de uso único (expira em 30 min) e `POST /auth/reset-password`
+troca a senha. Ambos os endpoints de "esqueci minha senha" e "reenviar
+verificação" sempre respondem `202`, verificando ou não a conta, pra não
+vazar quais emails têm cadastro.
+
+**O que ainda é placeholder:** não existe provedor de email real (SES,
+SendGrid...) — `app/services/email.py` só loga a mensagem (`logger.info`),
+com o token dentro. Antes de publicar, isso precisa virar um envio de
+email de verdade; a lógica de token/expiração/uso único já está pronta e
+testada, só falta trocar a "entrega".
 
 ### O Rinko Work Report
 

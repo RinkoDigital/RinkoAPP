@@ -7,6 +7,7 @@ def test_signup_creates_driver_and_returns_token(client):
     body = resp.json()
     assert body["driver"]["name"] == "Alex Silva"
     assert body["driver"]["email"] == "alex@example.com"
+    assert body["driver"]["email_verified"] is False
     assert body["access_token"]
 
 

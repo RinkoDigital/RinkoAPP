@@ -56,6 +56,11 @@ class PlanTier(str, enum.Enum):
     PRO = "pro"
 
 
+class AuthTokenPurpose(str, enum.Enum):
+    EMAIL_VERIFICATION = "email_verification"
+    PASSWORD_RESET = "password_reset"
+
+
 class Driver(Base):
     """An independent driver — the root account. Not owned by any company."""
 
@@ -65,6 +70,7 @@ class Driver(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    email_verified: Mapped[bool] = mapped_column(nullable=False, default=False)
     plan: Mapped[PlanTier] = mapped_column(
         Enum(PlanTier, native_enum=False), nullable=False, default=PlanTier.FREE
     )
@@ -72,6 +78,29 @@ class Driver(Base):
 
     carriers: Mapped[list["Carrier"]] = relationship(back_populates="driver")
     sessions: Mapped[list["WorkSession"]] = relationship(back_populates="driver")
+
+
+class AuthToken(Base):
+    """Single-use token backing email verification and password reset.
+
+    The raw token is only ever handed to app.services.email.send_email — a
+    placeholder that logs instead of delivering mail, since no real
+    provider is wired up yet. Only its salted hash is stored here.
+    """
+
+    __tablename__ = "auth_tokens"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    driver_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("drivers.id"), nullable=False)
+    purpose: Mapped[AuthTokenPurpose] = mapped_column(
+        Enum(AuthTokenPurpose, native_enum=False), nullable=False
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    expires_at: Mapped[datetime] = mapped_column(nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    driver: Mapped["Driver"] = relationship()
 
 
 class Carrier(Base):
