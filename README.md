@@ -177,14 +177,6 @@ pytest
 
 Os testes usam SQLite em memória e não dependem do Postgres.
 
-## Jurídico
-
-`legal/terms-of-service.md` e `legal/privacy-policy.md` — rascunhos
-gerados como ponto de partida (mercado dos EUA, CCPA/CPRA), **não
-revisados por advogado**. Têm placeholders (`[LEGAL ENTITY NAME]`,
-`[STATE]`, etc.) que precisam ser preenchidos e o texto todo precisa de
-revisão jurídica antes de publicar o app pra usuários reais.
-
 ## Evolução do produto (não faz parte do MVP)
 
 ```
