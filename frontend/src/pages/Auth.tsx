@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
-import { KitsuneMask } from "../components/KitsuneMask";
+import kitsuneMask from "../assets/kitsune-mask.webp";
 
 export function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -44,11 +44,6 @@ export function AuthPage() {
           position: "relative",
         }}
       >
-        <div
-          className="glow"
-          aria-hidden="true"
-          style={{ top: -140, left: "50%", transform: "translateX(-50%)", width: 320, height: 320 }}
-        />
         <div className="petal" aria-hidden="true" style={{ top: 20, left: "26%" }} />
         <div
           className="petal"
@@ -57,8 +52,13 @@ export function AuthPage() {
         />
 
         <div style={{ textAlign: "center", marginBottom: 36, position: "relative", zIndex: 1 }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
-            <KitsuneMask />
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: -8 }}>
+            <img
+              src={kitsuneMask}
+              alt=""
+              aria-hidden="true"
+              style={{ width: 220, maxWidth: "80%", height: "auto" }}
+            />
           </div>
           <div className="wordmark" style={{ fontSize: "2rem", color: "var(--crimson-glow)" }}>
             RINKO
