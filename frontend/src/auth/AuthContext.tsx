@@ -7,6 +7,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
   refreshDriver: (driver: Driver) => void;
 };
@@ -50,6 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [persist]
   );
 
+  const loginWithGoogle = useCallback(
+    async (idToken: string) => {
+      const result = await api.post<DriverToken>("/auth/oauth/google", { id_token: idToken });
+      persist(result);
+    },
+    [persist]
+  );
+
   const logout = useCallback(() => {
     setAuthToken(null);
     localStorage.removeItem(STORAGE_KEY);
@@ -62,8 +71,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ driver, isAuthenticated: driver !== null, login, signup, logout, refreshDriver }),
-    [driver, login, signup, logout, refreshDriver]
+    () => ({
+      driver,
+      isAuthenticated: driver !== null,
+      login,
+      signup,
+      loginWithGoogle,
+      logout,
+      refreshDriver,
+    }),
+    [driver, login, signup, loginWithGoogle, logout, refreshDriver]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

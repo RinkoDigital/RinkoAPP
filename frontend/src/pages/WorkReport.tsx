@@ -34,7 +34,7 @@ export function WorkReportPage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       if (err instanceof ApiError && err.status === 402) {
-        setDownloadError("Exportação .docx é um recurso Rinko Pro. O JSON do relatório continua grátis.");
+        setDownloadError("Exportação .docx é um recurso ShiftProof Pro. O JSON do relatório continua grátis.");
       } else {
         setDownloadError(err instanceof ApiError ? err.message : "Failed to download");
       }
@@ -83,7 +83,7 @@ export function WorkReportPage() {
             className="wordmark"
             style={{ color: "var(--crimson-glow)", fontSize: "0.9rem", position: "relative", zIndex: 1 }}
           >
-            RINKO — INDEPENDENT WORK RECORD
+            SHIFTPROOF — INDEPENDENT WORK RECORD
           </div>
           <div className="faint" style={{ marginTop: 4, position: "relative", zIndex: 1 }}>
             {report.report_number}

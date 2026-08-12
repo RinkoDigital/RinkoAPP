@@ -51,7 +51,7 @@ export default function WorkReportScreen() {
       const message = err instanceof Error ? err.message : "Failed to download";
       setDownloadError(
         message.includes("402")
-          ? "Exportação .docx é um recurso Rinko Pro. O JSON do relatório continua grátis."
+          ? "Exportação .docx é um recurso ShiftProof Pro. O JSON do relatório continua grátis."
           : message
       );
     } finally {
@@ -86,7 +86,7 @@ export default function WorkReportScreen() {
       </TopBar>
 
       <Card>
-        <Text style={styles.reportTitle}>RINKO — INDEPENDENT WORK RECORD</Text>
+        <Text style={styles.reportTitle}>SHIFTPROOF — INDEPENDENT WORK RECORD</Text>
         <Faint style={{ marginTop: 4 }}>{report.report_number}</Faint>
 
         <Row label="Driver" value={report.driver_name} />

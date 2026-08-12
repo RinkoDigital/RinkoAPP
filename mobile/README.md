@@ -1,4 +1,4 @@
-# Rinko — Mobile (Expo / React Native)
+# ShiftProof — Mobile (Expo / React Native)
 
 The native app: same backend, same screens as `frontend/` (the web app),
 rebuilt with Expo + React Native + Expo Router instead of Vite + Capacitor.
@@ -76,6 +76,37 @@ conta Expo). Sem isso, `registerForPushNotificationsAsync()` retorna
 `null` e loga um aviso — não crasha, só não registra nada. Testado até
 esse ponto (o app roda normal, sem token); a entrega de notificação de
 verdade num device físico não foi validada aqui.
+
+## Login com Google/Apple
+
+Na tela de auth (`app/auth.tsx`), abaixo do form de email/senha:
+
+- **Google**: `src/native/googleAuth.ts` usa `expo-auth-session` (fluxo
+  implícito, pede o `id_token` direto do Google, sem trocar código por
+  token — por isso não precisa de client secret nenhum embutido no app).
+  Precisa de `EXPO_PUBLIC_GOOGLE_CLIENT_ID` no ambiente — um client OAuth
+  do Google Cloud Console do tipo **"Web application"** (não "Android":
+  esse exige nome de pacote + SHA-1 do keystore, o que trava configuração
+  sem builder configurado; o tipo Web funciona nos dois apps sem isso).
+  Sem essa variável, o botão "Continuar com Google" simplesmente não
+  aparece — não quebra a tela.
+- **Apple**: `src/native/appleAuth.ts` usa `expo-apple-authentication`
+  (plugin já registrado em `app.json`). Só existe no iOS — é uma
+  capability do Apple Developer, não uma SDK de navegador/Android — o
+  botão nativo (`AppleAuthenticationButton`) só renderiza quando
+  `Platform.OS === "ios"`.
+
+Os dois mandam o token recebido pro backend (`POST /auth/oauth/google` /
+`POST /auth/oauth/apple`, ver README da raiz), que verifica a assinatura
+e cria/loga o motorista — o app nunca vê nem guarda senha nenhuma desse
+fluxo.
+
+**Testado neste ambiente**: só a renderização dos botões e que o clique
+não quebra a tela (via `expo start --web` + client id fake, sem popup de
+verdade — o sandbox não tem acesso de rede aos servidores do Google). O
+fluxo completo, de ponta a ponta, só dá pra validar com um Client ID real
+e, pro Apple, num build real (`expo-apple-authentication` não funciona no
+simulador/Expo Go pra sign-in de verdade).
 
 ## GPS na evidência
 

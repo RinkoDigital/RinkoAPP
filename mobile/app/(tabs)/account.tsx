@@ -63,7 +63,7 @@ export default function AccountScreen() {
           <Text style={styles.planPill}>GRÁTIS</Text>
         </View>
         <Faint style={{ marginTop: 4 }}>
-          A Rinko está gratuita, sem limites, enquanto validamos o produto — Work Report, CSV,
+          O ShiftProof está gratuito, sem limites, enquanto validamos o produto — Work Report, CSV,
           Ledger, exportação em .docx e evidence continuam liberados pra todo mundo.
         </Faint>
       </Card>

@@ -1,4 +1,4 @@
-# Rinko — Independent Driver Work Record
+# ShiftProof — Independent Driver Work Record
 
 *Your routes. Your work. Your records.*
 
@@ -18,15 +18,15 @@ Se houver divergência — a empresa diz que foram 118 pacotes quando o
 motorista acredita ter entregue 137 — a principal fonte de dados costuma
 pertencer justamente à empresa que está sendo questionada.
 
-## O que a Rinko é (Fase 1)
+## O que o ShiftProof é (Fase 1)
 
 Uma segunda camada, independente:
 
 ```
-CONTRATANTE → Route assigned → DRIVER → RINKO (Independent Record) → DRIVER'S RECORD
+CONTRATANTE → Route assigned → DRIVER → SHIFTPROOF (Independent Record) → DRIVER'S RECORD
 ```
 
-A Rinko não é uma plataforma de delivery. Não compete com o software da
+O ShiftProof não é uma plataforma de delivery. Não compete com o software da
 UniUni, OnTrac etc. — não determina rotas, não despacha, não gerencia
 frota. Ela documenta, do lado do motorista, o que foi trabalhado, o que é
 devido, e o que já foi recebido — com evidência anexada — pra que o
@@ -76,6 +76,8 @@ motoristas cadastrando "UniUni" têm dois registros independentes.
 | POST | `/auth/resend-verification` | público | Reenvia o email de verificação (resposta genérica, não revela se a conta existe) |
 | POST | `/auth/request-password-reset` | público | Solicita reset de senha (resposta genérica, não revela se a conta existe) |
 | POST | `/auth/reset-password` | público | Confirma o reset com o token recebido e define a nova senha |
+| POST | `/auth/oauth/google` | público | Login/cadastro com Google (`id_token` do cliente) → token |
+| POST | `/auth/oauth/apple` | público | Login/cadastro com Apple (`identity_token` do cliente) → token |
 | GET | `/account/plan` | driver token | Consulta o plano atual e o que ele libera |
 | POST | `/account/plan` | driver token | Troca de plano (`free`/`pro`) — hoje é uma flag manual, sem billing real |
 | POST | `/account/push-token` | driver token | Registra o token de push (Expo) do dispositivo |
@@ -93,7 +95,7 @@ motoristas cadastrando "UniUni" têm dois registros independentes.
 | POST | `/sessions/{id}/packages` | driver token | *(opcional)* Registra prova de entrega/devolução por pacote |
 | GET | `/sessions/{id}/packages` | driver token | Lista os pacotes da sessão |
 | POST | `/sessions/{id}/packages/{package_id}/pod-photo` | driver token | Upload da foto de prova daquele pacote |
-| GET | `/sessions/{id}/work-report` | driver token | O Rinko Work Report (JSON) — só após encerrada |
+| GET | `/sessions/{id}/work-report` | driver token | O ShiftProof Work Report (JSON) — só após encerrada |
 | GET | `/sessions/{id}/work-report.docx` | driver token | O mesmo relatório, como `.docx` |
 | GET | `/ledger` | driver token | Payment ledger — quanto está pendente de receber, e onde |
 
@@ -112,6 +114,58 @@ gera um token de uso único (expira em 30 min) e `POST /auth/reset-password`
 troca a senha. Ambos os endpoints de "esqueci minha senha" e "reenviar
 verificação" sempre respondem `202`, verificando ou não a conta, pra não
 vazar quais emails têm cadastro.
+
+### Login com Google/Apple
+
+O cliente (mobile ou web) faz a autenticação direto com o Google/Apple e
+manda pro backend só o token assinado que eles devolvem — o backend nunca
+vê a senha do usuário, só verifica a assinatura desse token
+(`app/services/oauth.py`) antes de criar/logar o motorista:
+
+- **Google**: `POST /auth/oauth/google` com `{ id_token }`. Verificado via
+  `google-auth` contra o `GOOGLE_CLIENT_ID` configurado (client OAuth do
+  tipo "Web application" — funciona nos dois apps sem precisar de nome de
+  pacote/SHA-1, ao contrário do client tipo "Android").
+- **Apple**: `POST /auth/oauth/apple` com `{ identity_token, name? }`.
+  Verificado localmente contra as chaves públicas da Apple
+  (`https://appleid.apple.com/auth/keys`, cacheadas em memória por 1h) —
+  sem precisar de nenhuma credencial de servidor. Só mobile/iOS por
+  enquanto (`expo-apple-authentication`); a Apple não expõe o nome do
+  usuário no token, só na primeira autorização no client, por isso o
+  campo `name` opcional.
+
+Os dois endpoints são **idempotentes por identidade**: reautenticar com a
+mesma conta Google/Apple sempre volta pro mesmo `Driver` (chave em
+`oauth_provider`+`oauth_subject`, não no email). Se já existir uma conta
+com o mesmo email (cadastrada por senha ou por outro provedor), a conta é
+vinculada ao invés de criar uma duplicata. `Driver.password_hash` é nulo
+pra quem só entrou via OAuth — não tem senha pra verificar.
+
+`/auth/oauth/google` responde `503` se `GOOGLE_CLIENT_ID` não estiver
+configurado. `/auth/oauth/apple` sempre valida contra `APPLE_BUNDLE_ID`
+(default `com.rinkodigital.app`, o mesmo bundle id do app). Nenhum dos
+dois trava o signup por email/senha, que continua funcionando normalmente.
+
+**Configuração no Google Cloud Console** (client tipo **"Web
+application"**, criado uma vez, reusado nos três lugares):
+
+- Backend: `GOOGLE_CLIENT_ID` (variável de ambiente do FastAPI) — é contra
+  esse ID que o `id_token` recebido é validado.
+- Web (`frontend/`): mesmo valor em `VITE_GOOGLE_CLIENT_ID`. Precisa
+  adicionar cada origem que vai servir o botão em **"Authorized JavaScript
+  origins"** do client (ex.: `http://localhost:5173` em dev, a URL do
+  Netlify em produção).
+- Mobile (`mobile/`): mesmo valor em `EXPO_PUBLIC_GOOGLE_CLIENT_ID`.
+  Precisa adicionar o redirect URI do app (esquema `shiftproof://`, gerado
+  por `expo-auth-session`) em **"Authorized redirect URIs"** do client —
+  se faltar, o Google recusa o login e mostra exatamente qual URI está
+  esperando, então dá pra copiar dali.
+
+Nenhum desses três lugares tem credencial de verdade configurada neste
+ambiente de desenvolvimento — os botões de "Continuar com Google"
+existem, foram testados até o ponto de renderizar e não travar a tela ao
+clicar (mobile e web), mas o fluxo completo, com o Client ID real, ainda
+não foi validado de ponta a ponta.
 
 **O que ainda é placeholder:** não existe provedor de email real (SES,
 SendGrid...) — `app/services/email.py` só loga a mensagem (`logger.info`),
@@ -186,13 +240,13 @@ Playwright (`context.set_geolocation`/`geolocation` do navegador) — o
 carimbo aparece corretamente na imagem final baixada da API, nos dois
 clientes.
 
-### O Rinko Work Report
+### O ShiftProof Work Report
 
 Ao encerrar uma sessão (`POST /sessions/{id}/close`), o motorista pode
 gerar o relatório estruturado — o verdadeiro produto:
 
 ```
-RINKO — INDEPENDENT WORK RECORD
+SHIFTPROOF — INDEPENDENT WORK RECORD
 
 Driver / Carrier / Service date / Route ID
 
@@ -219,7 +273,7 @@ descobrir exatamente quais rotas ainda não foram pagas.
 
 Desde o dia 1: `GET /sessions/export.csv` exporta todo o histórico de
 sessões. Os documentos de evidência (`Evidence.file_url`) continuam
-baixáveis diretamente. Se a promessa da Rinko é dar ao motorista
+baixáveis diretamente. Se a promessa do ShiftProof é dar ao motorista
 independência sobre o próprio histórico, prender esse histórico dentro de
 outro sistema fechado contradiz a proposta.
 
@@ -349,10 +403,10 @@ da suíte automatizada.
 Fase 1  Driver Work Records        ← isto aqui
 Fase 2  Payments + Disputes
 Fase 3  Driver Management
-Fase 4  Rinko Dispatch
-Fase 5  Rinko Routes
-Fase 6  Rinko Warehouse
-        → Rinko Last-Mile Network
+Fase 4  ShiftProof Dispatch
+Fase 5  ShiftProof Routes
+Fase 6  ShiftProof Warehouse
+        → ShiftProof Last-Mile Network
 ```
 
 As entidades fundamentais (driver, work session, carrier, package,

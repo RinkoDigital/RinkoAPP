@@ -11,4 +11,4 @@
   status = 200
 
 # Set VITE_API_BASE_URL in Netlify's Site settings → Environment variables,
-# pointing at your deployed backend (e.g. https://rinko-api.onrender.com).
+# pointing at your deployed backend (e.g. https://shiftproof-api.onrender.com).

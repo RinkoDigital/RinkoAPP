@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
+import { isGoogleSignInConfigured, renderGoogleButton } from "../api/googleAuth";
 import kitsuneMask from "../assets/kitsune-mask.webp";
 
 export function AuthPage() {
@@ -11,8 +12,25 @@ export function AuthPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { login, signup } = useAuth();
+  const { login, signup, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const googleButtonRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isGoogleSignInConfigured || !googleButtonRef.current) return;
+    renderGoogleButton(googleButtonRef.current, async (idToken) => {
+      setError(null);
+      try {
+        await loginWithGoogle(idToken);
+        navigate("/", { replace: true });
+      } catch (err) {
+        setError(err instanceof ApiError ? err.message : "Failed to sign in with Google");
+      }
+    }).catch(() => {
+      // Script failed to load (offline, blocked) — button just won't
+      // render; email/password sign-in still works.
+    });
+  }, [loginWithGoogle, navigate]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -60,8 +78,8 @@ export function AuthPage() {
               style={{ width: 220, maxWidth: "80%", height: "auto" }}
             />
           </div>
-          <div className="wordmark" style={{ fontSize: "2rem", color: "var(--crimson-glow)" }}>
-            RINKO
+          <div className="wordmark" style={{ fontSize: "1.6rem", color: "var(--crimson-glow)" }}>
+            SHIFTPROOF
           </div>
           <div className="faint" style={{ letterSpacing: "0.08em" }}>
             Your routes. Your work. Your records.
@@ -132,6 +150,17 @@ export function AuthPage() {
               {loading ? <span className="spinner" /> : mode === "login" ? "Entrar" : "Criar conta"}
             </button>
           </form>
+
+          {isGoogleSignInConfigured && (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "18px 0 14px" }}>
+                <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+                <span className="faint" style={{ fontSize: 12 }}>ou continue com</span>
+                <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+              </div>
+              <div ref={googleButtonRef} style={{ display: "flex", justifyContent: "center" }} />
+            </>
+          )}
         </div>
       </div>
     </div>

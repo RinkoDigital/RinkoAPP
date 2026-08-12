@@ -54,7 +54,7 @@ def render_work_report_docx(report: WorkReport) -> bytes:
 
     title = document.add_paragraph()
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = title.add_run("RINKO — INDEPENDENT WORK RECORD")
+    run = title.add_run("SHIFTPROOF — INDEPENDENT WORK RECORD")
     run.bold = True
     run.font.size = Pt(15)
 

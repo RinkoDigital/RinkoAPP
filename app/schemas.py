@@ -45,6 +45,17 @@ class DriverToken(BaseModel):
     driver: DriverOut
 
 
+class GoogleLoginRequest(BaseModel):
+    id_token: str
+
+
+class AppleLoginRequest(BaseModel):
+    identity_token: str
+    # Apple only ever includes the user's name in the client-side authorization
+    # result, once, on the very first sign-in — never in the token itself.
+    name: str | None = None
+
+
 class EmailVerifyRequest(BaseModel):
     token: str
 

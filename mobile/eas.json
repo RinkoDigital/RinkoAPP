@@ -14,13 +14,13 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://rinko-api.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://shiftproof-api.onrender.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://rinko-api.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://shiftproof-api.onrender.com"
       }
     }
   },

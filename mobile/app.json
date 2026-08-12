@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Rinko",
-    "slug": "rinko",
+    "name": "ShiftProof",
+    "slug": "shiftproof",
     "version": "1.0.0",
-    "scheme": "rinko",
+    "scheme": "shiftproof",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -39,16 +39,17 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Rinko usa sua localização pra marcar onde uma foto de evidência foi tirada."
+          "locationWhenInUsePermission": "ShiftProof usa sua localização pra marcar onde uma foto de evidência foi tirada."
         }
       ],
       [
         "expo-image-picker",
         {
-          "cameraPermission": "Rinko usa a câmera pra tirar fotos de evidência (comprovantes, sessões de rota, etc).",
-          "photosPermission": "Rinko usa a galeria pra anexar fotos de evidência já existentes."
+          "cameraPermission": "ShiftProof usa a câmera pra tirar fotos de evidência (comprovantes, sessões de rota, etc).",
+          "photosPermission": "ShiftProof usa a galeria pra anexar fotos de evidência já existentes."
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "extra": {
       "router": {}

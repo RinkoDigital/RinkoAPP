@@ -179,7 +179,7 @@ def export_sessions_csv(
     return Response(
         content=buffer.getvalue(),
         media_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="rinko_work_sessions.csv"'},
+        headers={"Content-Disposition": 'attachment; filename="shiftproof_work_sessions.csv"'},
     )
 
 
@@ -260,7 +260,7 @@ def upload_evidence(
             status_code=402,
             detail=(
                 f"Free plan is limited to {limit} evidence files per session. "
-                "Upgrade to Rinko Pro for unlimited evidence storage."
+                "Upgrade to ShiftProof Pro for unlimited evidence storage."
             ),
         )
 
@@ -347,7 +347,7 @@ def get_work_report_docx(
     if not can_export_docx(driver.plan):
         raise HTTPException(
             status_code=402,
-            detail="Formatted .docx export is a Rinko Pro feature. The JSON report stays free — see /sessions/{id}/work-report.",
+            detail="Formatted .docx export is a ShiftProof Pro feature. The JSON report stays free — see /sessions/{id}/work-report.",
         )
 
     session = _get_session(db, driver, session_id)

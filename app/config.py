@@ -31,5 +31,10 @@ class Settings(BaseSettings):
     smtp_from_email: str = "no-reply@rinkodigital.com"
     smtp_use_tls: bool = True
 
+    # Social login. Both are optional — set only the ones you've configured;
+    # the corresponding /auth/oauth/* endpoint 404s until its client id is set.
+    google_client_id: str = ""  # OAuth 2.0 "Web application" client ID
+    apple_bundle_id: str = "com.rinkodigital.app"  # aud claim on the Sign in with Apple identity token
+
 
 settings = Settings()

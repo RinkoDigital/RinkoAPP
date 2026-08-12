@@ -1,16 +1,21 @@
 import { useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Redirect, useRouter } from "expo-router";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { ApiError } from "../src/api/client";
 import { useAuth } from "../src/auth/AuthContext";
 import { AppButton, ErrorBanner, Field, LoadingScreen, Screen } from "../src/components/ui";
+import { isAppleSignInAvailable, signInWithApple } from "../src/native/appleAuth";
+import { isGoogleSignInConfigured, useGoogleIdToken } from "../src/native/googleAuth";
 import { colors } from "../src/theme";
 
 const kitsuneMask = require("../assets/kitsune-mask.webp");
 
 export default function AuthScreen() {
-  const { isAuthenticated, isLoading: authLoading, login, signup } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, login, signup, loginWithGoogle, loginWithApple } =
+    useAuth();
   const router = useRouter();
+  const { signIn: signInWithGoogle, isReady: googleReady } = useGoogleIdToken();
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [name, setName] = useState("");
@@ -18,6 +23,7 @@ export default function AuthScreen() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
 
   if (authLoading) return <LoadingScreen />;
   if (isAuthenticated) return <Redirect href="/" />;
@@ -39,11 +45,41 @@ export default function AuthScreen() {
     }
   }
 
+  async function handleGoogleSignIn() {
+    setError(null);
+    setOauthLoading(true);
+    try {
+      const idToken = await signInWithGoogle();
+      if (!idToken) return; // user canceled — nothing to report
+      await loginWithGoogle(idToken);
+      router.replace("/");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to sign in with Google");
+    } finally {
+      setOauthLoading(false);
+    }
+  }
+
+  async function handleAppleSignIn() {
+    setError(null);
+    setOauthLoading(true);
+    try {
+      const result = await signInWithApple();
+      if (!result) return; // user canceled — nothing to report
+      await loginWithApple(result.identityToken, result.fullName);
+      router.replace("/");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to sign in with Apple");
+    } finally {
+      setOauthLoading(false);
+    }
+  }
+
   return (
     <Screen>
       <View style={styles.hero}>
         <Image source={kitsuneMask} style={styles.mask} resizeMode="contain" />
-        <Text style={styles.wordmark}>RINKO</Text>
+        <Text style={styles.wordmark}>SHIFTPROOF</Text>
         <Text style={styles.tagline}>Your routes. Your work. Your records.</Text>
       </View>
 
@@ -80,6 +116,36 @@ export default function AuthScreen() {
           onPress={handleSubmit}
           loading={loading}
         />
+
+        {(googleReady || isAppleSignInAvailable) && (
+          <>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>ou continue com</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {isGoogleSignInConfigured && (
+              <AppButton
+                title="Continuar com Google"
+                variant="secondary"
+                onPress={handleGoogleSignIn}
+                loading={oauthLoading}
+                disabled={!googleReady}
+              />
+            )}
+
+            {isAppleSignInAvailable && (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+                cornerRadius={10}
+                style={styles.appleButton}
+                onPress={handleAppleSignIn}
+              />
+            )}
+          </>
+        )}
       </View>
     </Screen>
   );
@@ -98,8 +164,8 @@ const styles = StyleSheet.create({
   },
   wordmark: {
     fontFamily: "serif",
-    fontSize: 32,
-    letterSpacing: 6,
+    fontSize: 26,
+    letterSpacing: 4,
     color: colors.crimsonGlow,
   },
   tagline: {
@@ -139,5 +205,25 @@ const styles = StyleSheet.create({
     marginTop: 10,
     position: "absolute",
     bottom: -1,
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 18,
+    marginBottom: 14,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.line,
+  },
+  dividerText: {
+    color: colors.textFaint,
+    fontSize: 12,
+    marginHorizontal: 10,
+  },
+  appleButton: {
+    height: 46,
+    marginTop: 10,
   },
 });

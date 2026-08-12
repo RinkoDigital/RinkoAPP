@@ -65,11 +65,19 @@ class Driver(Base):
     """An independent driver — the root account. Not owned by any company."""
 
     __tablename__ = "drivers"
+    __table_args__ = (UniqueConstraint("oauth_provider", "oauth_subject", name="uq_driver_oauth_identity"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Null for drivers who only ever signed up via Google/Apple — there's no
+    # password to set or check for them.
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Set together when signup/login came through /auth/oauth/{provider}.
+    # Google's/Apple's "sub" claim, not the email — it's what's actually
+    # stable and unique per account on their side.
+    oauth_provider: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    oauth_subject: Mapped[str | None] = mapped_column(String(255), nullable=True)
     email_verified: Mapped[bool] = mapped_column(nullable=False, default=False)
     plan: Mapped[PlanTier] = mapped_column(
         Enum(PlanTier, native_enum=False), nullable=False, default=PlanTier.FREE

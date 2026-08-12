@@ -19,7 +19,7 @@ export function AccountPage() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "rinko_work_sessions.csv";
+        a.download = "shiftproof_work_sessions.csv";
         a.click();
         URL.revokeObjectURL(url);
       });
@@ -49,7 +49,7 @@ export function AccountPage() {
             </span>
           </div>
           <p className="faint" style={{ marginTop: 4 }}>
-            A Rinko está gratuita, sem limites, enquanto validamos o produto — Work Report, CSV,
+            O ShiftProof está gratuito, sem limites, enquanto validamos o produto — Work Report, CSV,
             Ledger, exportação em .docx e evidence continuam liberados pra todo mundo.
           </p>
         </div>

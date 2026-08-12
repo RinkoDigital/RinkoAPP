@@ -8,7 +8,7 @@ from app.config import settings
 from app.routers import account, auth, carriers, ledger, sessions
 
 app = FastAPI(
-    title="Rinko — Independent Driver Work Record",
+    title="ShiftProof — Independent Driver Work Record",
     description=(
         "An independent, verifiable record of work performed by a delivery "
         "driver, kept separate from the contracting carrier's own system. "

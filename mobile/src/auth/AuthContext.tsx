@@ -17,6 +17,8 @@ type AuthContextValue = {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
+  loginWithApple: (identityToken: string, name?: string | null) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -58,6 +60,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [persist]
   );
 
+  const loginWithGoogle = useCallback(
+    async (idToken: string) => {
+      const result = await api.post<DriverToken>("/auth/oauth/google", { id_token: idToken });
+      await persist(result);
+    },
+    [persist]
+  );
+
+  const loginWithApple = useCallback(
+    async (identityToken: string, name?: string | null) => {
+      const result = await api.post<DriverToken>("/auth/oauth/apple", {
+        identity_token: identityToken,
+        name: name ?? null,
+      });
+      await persist(result);
+    },
+    [persist]
+  );
+
   const logout = useCallback(async () => {
     await setAuthToken(null);
     await AsyncStorage.removeItem(STORAGE_KEY);
@@ -71,9 +92,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       signup,
+      loginWithGoogle,
+      loginWithApple,
       logout,
     }),
-    [driver, isLoading, login, signup, logout]
+    [driver, isLoading, login, signup, loginWithGoogle, loginWithApple, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
