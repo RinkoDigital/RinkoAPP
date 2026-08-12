@@ -41,6 +41,13 @@
         {
           "locationWhenInUsePermission": "Rinko usa sua localização pra marcar onde uma foto de evidência foi tirada."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Rinko usa a câmera pra tirar fotos de evidência (comprovantes, sessões de rota, etc).",
+          "photosPermission": "Rinko usa a galeria pra anexar fotos de evidência já existentes."
+        }
       ]
     ],
     "extra": {

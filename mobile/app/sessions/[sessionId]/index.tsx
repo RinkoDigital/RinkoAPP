@@ -133,11 +133,23 @@ export default function SessionDetailScreen() {
     }
   }
 
-  async function pickImage() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      quality: 0.9,
-    });
+  async function pickImage(source: "camera" | "library") {
+    let result: ImagePicker.ImagePickerResult;
+    if (source === "camera") {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        setError("Permissão de câmera negada.");
+        return;
+      }
+      result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.9 });
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        setError("Permissão de galeria negada.");
+        return;
+      }
+      result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.9 });
+    }
     if (result.canceled || result.assets.length === 0) return;
     const asset = result.assets[0];
     const name = asset.fileName ?? "evidence.jpg";
@@ -272,22 +284,28 @@ export default function SessionDetailScreen() {
           ))}
         </View>
 
-        <View style={{ flexDirection: "row", gap: 10 }}>
+        <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
           <AppButton
-            title="Foto/imagem"
+            title="Câmera"
             variant="secondary"
-            onPress={pickImage}
+            onPress={() => pickImage("camera")}
             loading={uploadingEvidence}
             style={{ flex: 1 }}
           />
           <AppButton
-            title="PDF"
+            title="Galeria"
             variant="secondary"
-            onPress={pickPdf}
+            onPress={() => pickImage("library")}
             loading={uploadingEvidence}
             style={{ flex: 1 }}
           />
         </View>
+        <AppButton
+          title="PDF"
+          variant="secondary"
+          onPress={pickPdf}
+          loading={uploadingEvidence}
+        />
       </Card>
 
       {session.status === "closed" && (
