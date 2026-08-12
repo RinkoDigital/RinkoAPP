@@ -72,6 +72,7 @@ export type Evidence = {
   note: string | null;
   latitude: number | null;
   longitude: number | null;
+  address: string | null;
   captured_at: string | null;
   uploaded_at: string;
 };

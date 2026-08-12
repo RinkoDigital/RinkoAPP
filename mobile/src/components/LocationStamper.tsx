@@ -83,16 +83,25 @@ export const LocationStamper = forwardRef<LocationStamperHandle>((_props, ref) =
             position: "absolute",
             right: fontSize * 0.7,
             bottom: fontSize * 0.7,
+            maxWidth: job.width * 0.6,
             backgroundColor: "rgba(10,7,7,0.62)",
             borderRadius: 8,
             paddingVertical: fontSize * 0.5,
             paddingHorizontal: fontSize * 0.7,
           }}
         >
-          <Text style={{ color: colors.paper, fontWeight: "600", fontSize }}>
-            {formatCoords(job.coords.latitude, job.coords.longitude)}
+          <Text
+            style={{ color: colors.paper, fontWeight: "600", fontSize }}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {job.coords.address ?? formatCoords(job.coords.latitude, job.coords.longitude)}
           </Text>
-          <Text style={{ color: colors.sakura, fontSize: fontSize * 0.8, marginTop: 2 }}>
+          <Text
+            style={{ color: colors.sakura, fontSize: fontSize * 0.8, marginTop: 2 }}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {new Date(job.coords.capturedAt).toLocaleString()}
           </Text>
         </View>

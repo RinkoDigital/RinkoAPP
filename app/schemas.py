@@ -157,6 +157,7 @@ class EvidenceOut(BaseModel):
     note: str | None
     latitude: float | None
     longitude: float | None
+    address: str | None
     captured_at: datetime | None
     uploaded_at: datetime
 

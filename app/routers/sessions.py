@@ -246,6 +246,7 @@ def upload_evidence(
     note: str | None = Form(default=None),
     latitude: float | None = Form(default=None),
     longitude: float | None = Form(default=None),
+    address: str | None = Form(default=None),
     captured_at: datetime | None = Form(default=None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -270,6 +271,7 @@ def upload_evidence(
         file_url="",
         latitude=latitude,
         longitude=longitude,
+        address=address,
         captured_at=captured_at,
     )
     db.add(evidence)

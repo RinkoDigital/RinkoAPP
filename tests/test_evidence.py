@@ -42,6 +42,7 @@ def test_upload_evidence_with_gps_location(client, driver_and_headers, carrier):
             "kind": "completion_record",
             "latitude": "40.712776",
             "longitude": "-74.005974",
+            "address": "150 Greenwich St, New York, NY",
             "captured_at": "2026-07-28T14:32:00",
         },
         files={"file": ("proof.png", fake_png, "image/png")},
@@ -50,6 +51,7 @@ def test_upload_evidence_with_gps_location(client, driver_and_headers, carrier):
     evidence = resp.json()
     assert evidence["latitude"] == 40.712776
     assert evidence["longitude"] == -74.005974
+    assert evidence["address"] == "150 Greenwich St, New York, NY"
     assert evidence["captured_at"] == "2026-07-28T14:32:00"
 
 
@@ -68,6 +70,7 @@ def test_evidence_location_is_optional(client, driver_and_headers, carrier):
     evidence = resp.json()
     assert evidence["latitude"] is None
     assert evidence["longitude"] is None
+    assert evidence["address"] is None
     assert evidence["captured_at"] is None
 
 

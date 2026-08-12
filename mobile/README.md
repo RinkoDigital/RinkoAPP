@@ -81,13 +81,16 @@ verdade num device físico não foi validada aqui.
 
 Ao escolher uma foto pra evidence (`pickImage` em
 `app/sessions/[sessionId]/index.tsx`), o app pede a localização
-(`src/native/locationStamp.ts`, via `expo-location`) e carimba as
-coordenadas + data/hora no canto inferior direito da imagem antes de
-subir — React Native não tem `<canvas>`, então isso é feito renderizando
-a foto + o texto fora da tela (`src/components/LocationStamper.tsx`) e
-capturando com `react-native-view-shot`. As coordenadas também vão como
-campos separados (`latitude`/`longitude`/`captured_at`), não só
-cravadas na imagem.
+(`src/native/locationStamp.ts`, via `expo-location`), converte as
+coordenadas num endereço com o geocoder nativo do sistema
+(`Location.reverseGeocodeAsync` — sem chave, cai de volta pras
+coordenadas cruas se falhar) e carimba o endereço + data/hora no canto
+inferior direito da imagem antes de subir — React Native não tem
+`<canvas>`, então isso é feito renderizando a foto + o texto fora da
+tela (`src/components/LocationStamper.tsx`) e capturando com
+`react-native-view-shot`. Os dados também vão como campos separados
+(`latitude`/`longitude`/`address`/`captured_at`), não só cravados na
+imagem.
 
 Testado via `expo start --web` com geolocalização mockada pelo Playwright
 — confirmei que a imagem final baixada da API tem o carimbo certo. No

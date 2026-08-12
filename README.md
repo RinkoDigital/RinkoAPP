@@ -160,16 +160,21 @@ Ao anexar uma **foto** como evidence (`POST /sessions/{id}/evidence`), o
 app pega a localização do dispositivo (Geolocation API no navegador,
 `expo-location` no mobile) e:
 
-1. **Carimba visualmente** as coordenadas + data/hora no canto inferior
+1. **Converte as coordenadas em endereço** via reverse geocoding — no web
+   com a API pública do OpenStreetMap Nominatim (sem chave), no mobile com
+   o geocoder nativo do sistema operacional (`Location.reverseGeocodeAsync`
+   do `expo-location`, também sem chave). Se o reverse geocoding falhar
+   (offline, sem resultado), cai de volta pras coordenadas cruas.
+2. **Carimba visualmente** o endereço + data/hora no canto inferior
    direito da própria foto, antes do upload — uma caixa semitransparente
    com o texto, no estilo dos apps de "GPS Map Camera" que motoristas já
    usam. No web isso é feito com `<canvas>` (`frontend/src/api/locationStamp.ts`);
    no mobile, como React Native não tem canvas, a foto + o texto são
    renderizados fora da tela e capturados como uma nova imagem via
    `react-native-view-shot` (`mobile/src/components/LocationStamper.tsx`).
-2. **Guarda os dados também** em `Evidence.latitude`/`longitude`/`captured_at`
-   — não só cravado nos pixels, mas consultável (a lista de evidence no
-   app mostra um 📍 em qualquer item que tenha localização).
+3. **Guarda os dados também** em `Evidence.latitude`/`longitude`/`address`/
+   `captured_at` — não só cravado nos pixels, mas consultável (a lista de
+   evidence no app mostra um 📍 em qualquer item que tenha localização).
 
 Só se aplica a fotos (`image/*`) — PDFs continuam sem carimbo, já que
 "colar texto num PDF" não é o mesmo tipo de operação e não fazia parte do

@@ -95,6 +95,9 @@ export function SessionDetailPage() {
       if (coords) {
         form.append("latitude", String(coords.latitude));
         form.append("longitude", String(coords.longitude));
+        if (coords.address) {
+          form.append("address", coords.address);
+        }
         form.append("captured_at", coords.capturedAt);
       }
       await api.postForm<Evidence>(`/sessions/${sessionId}/evidence`, form);

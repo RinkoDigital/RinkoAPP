@@ -239,10 +239,11 @@ class Evidence(Base):
     # Where the photo was taken, captured client-side (browser Geolocation
     # API / expo-location) at import time. Optional — evidence that isn't a
     # freshly-taken photo (a settlement PDF, an old screenshot) won't have
-    # this. The client also burns this into the image itself as a visible
-    # stamp; these columns keep it as queryable data too.
+    # this. The client also burns the address into the image itself as a
+    # visible stamp; these columns keep it as queryable data too.
     latitude: Mapped[float | None] = mapped_column(nullable=True)
     longitude: Mapped[float | None] = mapped_column(nullable=True)
+    address: Mapped[str | None] = mapped_column(String(500), nullable=True)
     captured_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     uploaded_at: Mapped[datetime] = mapped_column(server_default=func.now())
