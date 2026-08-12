@@ -99,6 +99,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) => request<T>(path, { method: "POST", body }),
+  del: <T>(path: string, body?: unknown) => request<T>(path, { method: "DELETE", body }),
   postForm: <T>(path: string, form: FormData) =>
     request<T>(path, { method: "POST", body: form }),
   downloadUrl: (path: string) => (/^https?:\/\//.test(path) ? path : `${API_BASE_URL}${path}`),

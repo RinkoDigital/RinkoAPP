@@ -72,6 +72,10 @@ class PlanInfo(BaseModel):
     evidence_per_session_limit: int | None
 
 
+class PushTokenRegister(BaseModel):
+    token: str
+
+
 # ---------- Carrier ----------
 
 

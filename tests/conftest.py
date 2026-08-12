@@ -44,6 +44,15 @@ def client():
 
 
 @pytest.fixture
+def db_session():
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@pytest.fixture
 def driver_and_headers(client):
     resp = client.post(
         "/auth/signup",

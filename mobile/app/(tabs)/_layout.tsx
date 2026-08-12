@@ -1,11 +1,18 @@
+import { useEffect } from "react";
 import { Redirect, Tabs } from "expo-router";
 import { Text } from "react-native";
 import { useAuth } from "../../src/auth/AuthContext";
 import { LoadingScreen } from "../../src/components/ui";
+import { syncPushTokenWithBackend } from "../../src/native/pushNotifications";
 import { colors } from "../../src/theme";
 
 export default function TabsLayout() {
   const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    syncPushTokenWithBackend();
+  }, [isAuthenticated]);
 
   if (isLoading) return <LoadingScreen />;
   if (!isAuthenticated) return <Redirect href="/auth" />;

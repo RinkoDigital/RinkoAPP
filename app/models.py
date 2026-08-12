@@ -103,6 +103,24 @@ class AuthToken(Base):
     driver: Mapped["Driver"] = relationship()
 
 
+class PushToken(Base):
+    """An Expo push token for one of the driver's devices.
+
+    A driver can have more than one device registered (phone + tablet,
+    reinstall, etc.) — the token itself is the unique key, re-registering
+    the same token from a different login just moves it to that driver.
+    """
+
+    __tablename__ = "push_tokens"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    driver_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("drivers.id"), nullable=False)
+    token: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    driver: Mapped["Driver"] = relationship()
+
+
 class Carrier(Base):
     """A contracting company the driver works routes for (e.g. UniUni, GOFO, OnTrac).
 
@@ -157,6 +175,11 @@ class WorkSession(Base):
 
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     closed_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+    # Each reminder fires at most once — set the first time it's sent, never
+    # cleared, so the job that sends them is idempotent on repeated runs.
+    payment_reminder_sent_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    stale_session_reminder_sent_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     driver: Mapped["Driver"] = relationship(back_populates="sessions")
     carrier: Mapped["Carrier"] = relationship(back_populates="sessions")

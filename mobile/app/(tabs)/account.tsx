@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { API_BASE_URL, api } from "../../src/api/client";
 import { useAuth } from "../../src/auth/AuthContext";
 import { AppButton, Card, ErrorBanner, Faint, Screen, Title, TopBar } from "../../src/components/ui";
+import { unregisterPushToken } from "../../src/native/pushNotifications";
 import { colors } from "../../src/theme";
 import { useState } from "react";
 
@@ -35,6 +36,7 @@ export default function AccountScreen() {
   }
 
   async function handleLogout() {
+    await unregisterPushToken();
     await logout();
     router.replace("/auth");
   }

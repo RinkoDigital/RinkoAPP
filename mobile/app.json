@@ -21,20 +21,22 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false,
-      "intentFilters": [
-        {
-          "action": "SEND",
-          "category": ["DEFAULT"],
-          "data": [{ "mimeType": "image/*" }, { "mimeType": "application/pdf" }]
-        }
-      ]
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#C81F34"
+        }
+      ]
+    ],
     "extra": {
       "router": {}
     }

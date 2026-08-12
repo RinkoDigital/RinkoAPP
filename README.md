@@ -78,6 +78,8 @@ motoristas cadastrando "UniUni" têm dois registros independentes.
 | POST | `/auth/reset-password` | público | Confirma o reset com o token recebido e define a nova senha |
 | GET | `/account/plan` | driver token | Consulta o plano atual e o que ele libera |
 | POST | `/account/plan` | driver token | Troca de plano (`free`/`pro`) — hoje é uma flag manual, sem billing real |
+| POST | `/account/push-token` | driver token | Registra o token de push (Expo) do dispositivo |
+| DELETE | `/account/push-token` | driver token | Remove o token de push (chamado no logout) |
 | POST | `/carriers` | driver token | Registra uma contratante (ex.: UniUni) |
 | GET | `/carriers` | driver token | Lista as contratantes do motorista |
 | POST | `/sessions` | driver token | Inicia uma work session (`open`) |
@@ -116,6 +118,41 @@ SendGrid...) — `app/services/email.py` só loga a mensagem (`logger.info`),
 com o token dentro. Antes de publicar, isso precisa virar um envio de
 email de verdade; a lógica de token/expiração/uso único já está pronta e
 testada, só falta trocar a "entrega".
+
+### Notificações push
+
+O app mobile (`mobile/`) registra o token de push do dispositivo em
+`POST /account/push-token` assim que o motorista loga. Dois lembretes,
+cada um disparado no máximo uma vez por sessão (marcado em
+`WorkSession.payment_reminder_sent_at`/`stale_session_reminder_sent_at`,
+pra não reenviar todo dia):
+
+- **Pagamento a vencer/vencido** — sessão fechada, `payment_due_date`
+  chegou ou passou, e o pagamento ainda não foi totalmente recebido.
+- **Sessão aberta há muito tempo** — `work_sessions.status == open` por
+  mais de 12h (`STALE_SESSION_HOURS` em `app/jobs/send_reminders.py`),
+  lembrando de encerrar e gerar o Work Report.
+
+Nada nisso dispara sozinho — é um job (`app/jobs/send_reminders.py`)
+pensado pra rodar num agendador externo:
+
+```bash
+python -m app.jobs.send_reminders
+```
+
+Em produção, isso vira um Render Cron Job ou uma GitHub Action agendada
+(`schedule:` no workflow) rodando a cada N horas — nenhum dos dois foi
+configurado aqui, já que exige acesso à sua conta Render/GitHub. O envio
+em si usa a [Expo Push API](https://docs.expo.dev/push-notifications/sending-notifications/)
+(`app/services/push.py`) — sem chave de API pro tier gratuito da Expo.
+
+**O que não foi testado de ponta a ponta:** o token de push de verdade só
+existe depois de `eas build:configure`/`eas init` numa conta Expo real
+(gera o `projectId` que `mobile/src/native/pushNotifications.ts` precisa)
+— sem isso, o app pula o registro silenciosamente (log de aviso, sem
+crash). A lógica de banco (quem precisa de lembrete, idempotência) e o
+envio pra API da Expo estão testados com mocks; falta uma conta Expo pra
+ver a notificação chegar num aparelho de verdade.
 
 ### O Rinko Work Report
 

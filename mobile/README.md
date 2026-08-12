@@ -50,21 +50,38 @@ de desenvolvimento restrito.
 - `npx tsc --noEmit` limpo
 - `expo start --web` rodando de verdade contra o backend real: cadastro,
   login, criar carrier, iniciar/encerrar work session, ver Work Report com
-  números calculados — tudo verificado com Playwright, sem erros de
-  console
+  números calculados, registro/remoção de push token (via web, onde vira
+  no-op) — tudo verificado com Playwright, sem erros de console
 - **Não testado**: build nativo de verdade (iOS/Android). Esse ambiente
   não tem simulador nem dispositivo, e `api.expo.dev` (usado pelo EAS)
   está bloqueado pela política de rede daqui — só dá pra validar via
   `--web`, que usa react-native-web e não passa pelo runtime nativo real.
 
+## Notificações push
+
+`src/native/pushNotifications.ts` pede permissão, pega o Expo push token
+do device e registra em `POST /account/push-token` assim que o motorista
+loga (chamado em `app/(tabs)/_layout.tsx`); no logout, `unregisterPushToken()`
+remove o token (`DELETE /account/push-token`), pra um device deslogado
+parar de receber lembretes daquele motorista.
+
+O que dispara os lembretes é um job no backend (`app/jobs/send_reminders.py`,
+ver README da raiz) — este app só cuida de registrar/desregistrar o token
+e receber a notificação quando ela chega.
+
+**Sem token de verdade neste ambiente**: `getExpoPushTokenAsync` exige um
+`projectId` de um projeto EAS real (só existe depois de `eas init` numa
+conta Expo). Sem isso, `registerForPushNotificationsAsync()` retorna
+`null` e loga um aviso — não crasha, só não registra nada. Testado até
+esse ponto (o app roda normal, sem token); a entrega de notificação de
+verdade num device físico não foi validada aqui.
+
 ## Share Sheet (evidence direto de outros apps)
 
-**Ainda não implementado neste app** (o app web/Capacitor em `frontend/`
-tem essa feature — ver `frontend/ios/SHARE_EXTENSION_SETUP.md` e o plugin
-Android lá). Pro Expo, o caminho seria uma lib de share-intent (ex.:
-`expo-share-intent`) — isso exige um dev client customizado (não funciona
-no Expo Go puro) e não foi validado aqui por falta de acesso a
-simulador/EAS. Fica como próximo passo.
+**Ainda não implementado neste app.** O caminho seria uma lib de
+share-intent (ex.: `expo-share-intent`) — isso exige um dev client
+customizado (não funciona no Expo Go puro) e não foi validado aqui por
+falta de acesso a simulador/EAS. Fica como próximo passo.
 
 ## Build nativo (EAS)
 
