@@ -70,6 +70,9 @@ export type Evidence = {
   kind: EvidenceKind;
   file_url: string;
   note: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  captured_at: string | null;
   uploaded_at: string;
 };
 

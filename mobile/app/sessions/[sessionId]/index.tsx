@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 import { api, ApiError } from "../../../src/api/client";
 import { formatCents, formatDate } from "../../../src/api/format";
 import type { Evidence, EvidenceKind, WorkSession } from "../../../src/api/types";
+import { LocationStamper, type LocationStamperHandle } from "../../../src/components/LocationStamper";
 import { StatusPill } from "../../../src/components/StatusPill";
 import {
   AppButton,
@@ -19,6 +20,7 @@ import {
   Title,
   TopBar,
 } from "../../../src/components/ui";
+import { getCurrentLocation, type Coords } from "../../../src/native/locationStamp";
 import { colors } from "../../../src/theme";
 
 const EVIDENCE_KINDS: { value: EvidenceKind; label: string }[] = [
@@ -46,6 +48,7 @@ export default function SessionDetailScreen() {
 
   const [evidenceKind, setEvidenceKind] = useState<EvidenceKind>("route_screenshot");
   const [uploadingEvidence, setUploadingEvidence] = useState(false);
+  const stamperRef = useRef<LocationStamperHandle>(null);
 
   const load = useCallback(() => {
     if (!sessionId) return;
@@ -95,15 +98,29 @@ export default function SessionDetailScreen() {
     }
   }
 
-  async function uploadFile(uri: string, name: string, type: string) {
+  async function uploadFile(uri: string, name: string, type: string, coords?: Coords | null) {
     if (!sessionId) return;
     setError(null);
     setUploadingEvidence(true);
     try {
       const form = new FormData();
       form.append("kind", evidenceKind);
-      // React Native's FormData accepts this file-descriptor shape directly.
-      form.append("file", { uri, name, type } as unknown as Blob);
+      if (uri.startsWith("data:")) {
+        // Web only: react-native-view-shot has no real filesystem there, so
+        // captureRef() resolves to a data URI instead of a file:// one — the
+        // {uri, name, type} descriptor below is a React Native FormData
+        // convention the browser's real FormData doesn't understand.
+        const blob = await (await fetch(uri)).blob();
+        form.append("file", blob, name);
+      } else {
+        // React Native's FormData accepts this file-descriptor shape directly.
+        form.append("file", { uri, name, type } as unknown as Blob);
+      }
+      if (coords) {
+        form.append("latitude", String(coords.latitude));
+        form.append("longitude", String(coords.longitude));
+        form.append("captured_at", coords.capturedAt);
+      }
       await api.postForm<Evidence>(`/sessions/${sessionId}/evidence`, form);
       load();
     } catch (err) {
@@ -120,7 +137,21 @@ export default function SessionDetailScreen() {
     });
     if (result.canceled || result.assets.length === 0) return;
     const asset = result.assets[0];
-    await uploadFile(asset.uri, asset.fileName ?? "evidence.jpg", asset.mimeType ?? "image/jpeg");
+    const name = asset.fileName ?? "evidence.jpg";
+    const type = asset.mimeType ?? "image/jpeg";
+
+    const coords = await getCurrentLocation();
+    if (coords && stamperRef.current) {
+      try {
+        const stampedUri = await stamperRef.current.stamp(asset.uri, coords);
+        await uploadFile(stampedUri, name, "image/jpeg", coords);
+        return;
+      } catch {
+        // Stamping failed (decode/capture error) — fall through and upload
+        // the original photo with the coordinates as plain metadata.
+      }
+    }
+    await uploadFile(asset.uri, name, type, coords);
   }
 
   async function pickPdf() {
@@ -148,6 +179,7 @@ export default function SessionDetailScreen() {
 
   return (
     <Screen>
+      <LocationStamper ref={stamperRef} />
       <TopBar>
         <Pressable onPress={() => router.back()}>
           <Text style={styles.backLink}>← Voltar</Text>
@@ -216,6 +248,7 @@ export default function SessionDetailScreen() {
             <View key={ev.id} style={styles.evidenceChip}>
               <Text style={styles.evidenceChipText}>
                 ✓ {EVIDENCE_KINDS.find((k) => k.value === ev.kind)?.label ?? ev.kind}
+                {ev.latitude !== null ? " 📍" : ""}
               </Text>
             </View>
           ))}

@@ -155,6 +155,9 @@ class EvidenceOut(BaseModel):
     kind: EvidenceKind
     file_url: str
     note: str | None
+    latitude: float | None
+    longitude: float | None
+    captured_at: datetime | None
     uploaded_at: datetime
 
 

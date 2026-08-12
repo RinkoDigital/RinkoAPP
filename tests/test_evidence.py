@@ -30,6 +30,47 @@ def test_upload_route_screenshot_evidence(client, driver_and_headers, carrier):
     assert photo_resp.status_code == 200
 
 
+def test_upload_evidence_with_gps_location(client, driver_and_headers, carrier):
+    _, headers = driver_and_headers
+    session = _create_session(client, headers, carrier)
+
+    fake_png = io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"0" * 50)
+    resp = client.post(
+        f"/sessions/{session['id']}/evidence",
+        headers=headers,
+        data={
+            "kind": "completion_record",
+            "latitude": "40.712776",
+            "longitude": "-74.005974",
+            "captured_at": "2026-07-28T14:32:00",
+        },
+        files={"file": ("proof.png", fake_png, "image/png")},
+    )
+    assert resp.status_code == 201
+    evidence = resp.json()
+    assert evidence["latitude"] == 40.712776
+    assert evidence["longitude"] == -74.005974
+    assert evidence["captured_at"] == "2026-07-28T14:32:00"
+
+
+def test_evidence_location_is_optional(client, driver_and_headers, carrier):
+    _, headers = driver_and_headers
+    session = _create_session(client, headers, carrier)
+
+    fake_png = io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"0" * 50)
+    resp = client.post(
+        f"/sessions/{session['id']}/evidence",
+        headers=headers,
+        data={"kind": "settlement_statement"},
+        files={"file": ("statement.png", fake_png, "image/png")},
+    )
+    assert resp.status_code == 201
+    evidence = resp.json()
+    assert evidence["latitude"] is None
+    assert evidence["longitude"] is None
+    assert evidence["captured_at"] is None
+
+
 def test_upload_settlement_statement_pdf(client, driver_and_headers, carrier):
     _, headers = driver_and_headers
     session = _create_session(client, headers, carrier)

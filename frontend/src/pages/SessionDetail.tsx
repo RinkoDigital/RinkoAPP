@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { formatCents, formatDate } from "../api/format";
+import { getCurrentLocation, stampImageWithLocation } from "../api/locationStamp";
 import type { Evidence, EvidenceKind, WorkSession } from "../api/types";
 import { StatusPill } from "../components/StatusPill";
 
@@ -82,9 +83,20 @@ export function SessionDetailPage() {
     setError(null);
     setUploadingEvidence(true);
     try {
+      let fileToUpload = evidenceFile;
+      const coords = evidenceFile.type.startsWith("image/") ? await getCurrentLocation() : null;
+      if (coords) {
+        fileToUpload = await stampImageWithLocation(evidenceFile, coords);
+      }
+
       const form = new FormData();
       form.append("kind", evidenceKind);
-      form.append("file", evidenceFile);
+      form.append("file", fileToUpload);
+      if (coords) {
+        form.append("latitude", String(coords.latitude));
+        form.append("longitude", String(coords.longitude));
+        form.append("captured_at", coords.capturedAt);
+      }
       await api.postForm<Evidence>(`/sessions/${sessionId}/evidence`, form);
       setEvidenceFile(null);
       load();
@@ -230,6 +242,7 @@ export function SessionDetailPage() {
                 style={{ color: "inherit", textDecoration: "none" }}
               >
                 ✓ {EVIDENCE_KINDS.find((k) => k.value === ev.kind)?.label ?? ev.kind}
+                {ev.latitude !== null && " 📍"}
               </a>
             ))}
           </div>

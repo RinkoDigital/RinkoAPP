@@ -35,6 +35,12 @@
           "icon": "./assets/icon.png",
           "color": "#C81F34"
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Rinko usa sua localização pra marcar onde uma foto de evidência foi tirada."
+        }
       ]
     ],
     "extra": {

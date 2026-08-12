@@ -244,6 +244,9 @@ def upload_evidence(
     session_id: uuid.UUID,
     kind: EvidenceKind = Form(...),
     note: str | None = Form(default=None),
+    latitude: float | None = Form(default=None),
+    longitude: float | None = Form(default=None),
+    captured_at: datetime | None = Form(default=None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     driver: Driver = Depends(get_current_driver),
@@ -260,7 +263,15 @@ def upload_evidence(
             ),
         )
 
-    evidence = Evidence(session_id=session.id, kind=kind, note=note, file_url="")
+    evidence = Evidence(
+        session_id=session.id,
+        kind=kind,
+        note=note,
+        file_url="",
+        latitude=latitude,
+        longitude=longitude,
+        captured_at=captured_at,
+    )
     db.add(evidence)
     db.flush()
     evidence.file_url = save_evidence_file(str(evidence.id), file)

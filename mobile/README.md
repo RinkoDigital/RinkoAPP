@@ -51,7 +51,8 @@ de desenvolvimento restrito.
 - `expo start --web` rodando de verdade contra o backend real: cadastro,
   login, criar carrier, iniciar/encerrar work session, ver Work Report com
   números calculados, registro/remoção de push token (via web, onde vira
-  no-op) — tudo verificado com Playwright, sem erros de console
+  no-op), upload de evidence com carimbo de GPS (localização mockada via
+  Playwright) — tudo verificado com Playwright, sem erros de console
 - **Não testado**: build nativo de verdade (iOS/Android). Esse ambiente
   não tem simulador nem dispositivo, e `api.expo.dev` (usado pelo EAS)
   está bloqueado pela política de rede daqui — só dá pra validar via
@@ -75,6 +76,23 @@ conta Expo). Sem isso, `registerForPushNotificationsAsync()` retorna
 `null` e loga um aviso — não crasha, só não registra nada. Testado até
 esse ponto (o app roda normal, sem token); a entrega de notificação de
 verdade num device físico não foi validada aqui.
+
+## GPS na evidência
+
+Ao escolher uma foto pra evidence (`pickImage` em
+`app/sessions/[sessionId]/index.tsx`), o app pede a localização
+(`src/native/locationStamp.ts`, via `expo-location`) e carimba as
+coordenadas + data/hora no canto inferior direito da imagem antes de
+subir — React Native não tem `<canvas>`, então isso é feito renderizando
+a foto + o texto fora da tela (`src/components/LocationStamper.tsx`) e
+capturando com `react-native-view-shot`. As coordenadas também vão como
+campos separados (`latitude`/`longitude`/`captured_at`), não só
+cravadas na imagem.
+
+Testado via `expo start --web` com geolocalização mockada pelo Playwright
+— confirmei que a imagem final baixada da API tem o carimbo certo. No
+web, `captureRef` devolve uma data URI em vez de um arquivo (limitação só
+do preview em navegador); o upload trata os dois casos.
 
 ## Share Sheet (evidence direto de outros apps)
 

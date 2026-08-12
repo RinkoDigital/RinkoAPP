@@ -154,6 +154,33 @@ crash). A lógica de banco (quem precisa de lembrete, idempotência) e o
 envio pra API da Expo estão testados com mocks; falta uma conta Expo pra
 ver a notificação chegar num aparelho de verdade.
 
+### GPS na evidência
+
+Ao anexar uma **foto** como evidence (`POST /sessions/{id}/evidence`), o
+app pega a localização do dispositivo (Geolocation API no navegador,
+`expo-location` no mobile) e:
+
+1. **Carimba visualmente** as coordenadas + data/hora no canto inferior
+   direito da própria foto, antes do upload — uma caixa semitransparente
+   com o texto, no estilo dos apps de "GPS Map Camera" que motoristas já
+   usam. No web isso é feito com `<canvas>` (`frontend/src/api/locationStamp.ts`);
+   no mobile, como React Native não tem canvas, a foto + o texto são
+   renderizados fora da tela e capturados como uma nova imagem via
+   `react-native-view-shot` (`mobile/src/components/LocationStamper.tsx`).
+2. **Guarda os dados também** em `Evidence.latitude`/`longitude`/`captured_at`
+   — não só cravado nos pixels, mas consultável (a lista de evidence no
+   app mostra um 📍 em qualquer item que tenha localização).
+
+Só se aplica a fotos (`image/*`) — PDFs continuam sem carimbo, já que
+"colar texto num PDF" não é o mesmo tipo de operação e não fazia parte do
+pedido. Pedir localização nunca bloqueia o upload: se o motorista negar a
+permissão ou o GPS falhar, a foto sobe normalmente, sem carimbo.
+
+Testado de ponta a ponta nos dois apps com a localização mockada via
+Playwright (`context.set_geolocation`/`geolocation` do navegador) — o
+carimbo aparece corretamente na imagem final baixada da API, nos dois
+clientes.
+
 ### O Rinko Work Report
 
 Ao encerrar uma sessão (`POST /sessions/{id}/close`), o motorista pode
