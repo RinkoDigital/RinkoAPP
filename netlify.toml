@@ -1,0 +1,14 @@
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  # SPA fallback — client-side routing (react-router) needs every path to
+  # serve index.html, not a 404, on a direct load/refresh.
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Set VITE_API_BASE_URL in Netlify's Site settings → Environment variables,
+# pointing at your deployed backend (e.g. https://rinko-api.onrender.com).

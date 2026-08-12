@@ -194,13 +194,70 @@ mesmo tema visual dos mockups. Roda como web app hoje; tem Capacitor já
 configurado pra virar app nativo iOS/Android assim que rodar o build numa
 máquina com Xcode/Android Studio. Ver `frontend/README.md` pra instruções.
 
+## Deploy
+
+### Backend
+
+`Dockerfile` na raiz builda a API e roda `alembic upgrade head` antes de
+subir o servidor. `render.yaml` é um Blueprint pronto pro
+[Render](https://render.com) — sobe o serviço web (a partir do Dockerfile)
+e provisiona um Postgres gerenciado, já conectando `DATABASE_URL` entre os
+dois. Qualquer host que rode um Dockerfile (Railway, Fly.io, etc.) funciona
+do mesmo jeito, só sem o blueprint pronto.
+
+Variáveis de ambiente que precisam existir em produção (ver
+`.env.example`): `DATABASE_URL`, `JWT_SECRET` (gere um valor real — o
+blueprint do Render já gera um automaticamente).
+
+**Storage e email têm um backend padrão que não serve pra produção de
+verdade:**
+- `STORAGE_BACKEND=local` (padrão) grava evidence/POD no disco do próprio
+  container. Isso funciona pra rodar localmente, mas a maioria dos hosts
+  (incluindo o Render sem um Disk pago) tem filesystem efêmero — os
+  arquivos somem no próximo deploy ou restart. Antes de usar com dados
+  reais, troque pra `STORAGE_BACKEND=s3` e preencha `S3_BUCKET`,
+  `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` (e
+  `S3_ENDPOINT_URL`/`S3_PUBLIC_BASE_URL` se for Cloudflare R2, Backblaze
+  B2, ou qualquer coisa que não seja AWS S3 direto).
+- `EMAIL_BACKEND=log` (padrão) não entrega email nenhum — só loga a
+  mensagem, então verificação de conta e reset de senha não chegam pra
+  ninguém. Troque pra `EMAIL_BACKEND=smtp` e preencha `SMTP_HOST`,
+  `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL` com as
+  credenciais de qualquer provedor (SendGrid, Postmark, SES, Mailgun...) —
+  é SMTP puro, sem SDK específico de provedor.
+
+Ambos os backends foram testados (mockados) em `tests/test_storage_backends.py`
+e `tests/test_email_backend.py`, e o schema/migrations foram validados
+rodando de verdade contra um Postgres real (não só o SQLite dos testes).
+
+### Front-end
+
+`netlify.toml` na raiz já aponta pro subdiretório `frontend/`, builda com
+Vite e configura o fallback de SPA pro react-router funcionar em rotas
+diretas. No Netlify, é só conectar o repositório — o `netlify.toml` cobre
+o resto. Na Vercel funciona igual, mas o "Root Directory" do projeto
+precisa ser configurado como `frontend` no dashboard (não tem equivalente
+em arquivo). Em qualquer uma das duas, defina `VITE_API_BASE_URL` nas
+variáveis de ambiente do projeto, apontando pro backend já deployado.
+
+### O que não foi verificado aqui
+
+Não existe Docker daemon neste ambiente (sandbox sem suporte a
+containers), então o `Dockerfile` não foi buildado de verdade — só
+revisado. O que **foi** verificado: as migrations do Alembic rodam limpo
+num Postgres real (não só SQLite), e a API completa (signup, sessão,
+evidence, work report em `.docx`, export CSV) funciona ponta a ponta
+contra esse Postgres.
+
 ## Testes
 
 ```bash
 pytest
 ```
 
-Os testes usam SQLite em memória e não dependem do Postgres.
+Os testes usam SQLite em memória e não dependem do Postgres — exceto a
+verificação manual contra Postgres real descrita acima, que não faz parte
+da suíte automatizada.
 
 ## Evolução do produto (não faz parte do MVP)
 

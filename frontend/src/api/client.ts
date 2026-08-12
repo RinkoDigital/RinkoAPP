@@ -76,7 +76,10 @@ export const api = {
   post: <T>(path: string, body?: unknown) => request<T>(path, { method: "POST", body }),
   postForm: <T>(path: string, form: FormData) =>
     request<T>(path, { method: "POST", body: form }),
-  downloadUrl: (path: string) => `${API_BASE_URL}${path}`,
+  // Evidence/POD file_url is relative ("/uploads/...") when the backend
+  // serves files itself, but absolute once STORAGE_BACKEND=s3 is set
+  // (points straight at the bucket/CDN) — pass absolute URLs through.
+  downloadUrl: (path: string) => (/^https?:\/\//.test(path) ? path : `${API_BASE_URL}${path}`),
 };
 
 export { API_BASE_URL };
