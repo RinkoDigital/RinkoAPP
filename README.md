@@ -189,10 +189,17 @@ uvicorn app.main:app --reload
 
 ## Front-end
 
-`frontend/` — app React + Vite (TypeScript) que consome essa API, com o
-mesmo tema visual dos mockups. Roda como web app hoje; tem Capacitor já
-configurado pra virar app nativo iOS/Android assim que rodar o build numa
-máquina com Xcode/Android Studio. Ver `frontend/README.md` pra instruções.
+Dois clientes, um backend:
+
+- `frontend/` — web app (React + Vite), deployado via Netlify. Ver
+  `frontend/README.md`.
+- `mobile/` — app nativo iOS/Android (Expo + React Native + Expo Router),
+  buildado na nuvem via EAS Build (sem precisar de Mac/Xcode local). Ver
+  `mobile/README.md`.
+
+Os dois consomem a mesma API e replicam as mesmas telas/tema — não
+compartilham código de UI entre si (React DOM vs. React Native têm
+primitivos diferentes), mas seguem a mesma estrutura.
 
 ## Deploy
 
@@ -239,6 +246,14 @@ o resto. Na Vercel funciona igual, mas o "Root Directory" do projeto
 precisa ser configurado como `frontend` no dashboard (não tem equivalente
 em arquivo). Em qualquer uma das duas, defina `VITE_API_BASE_URL` nas
 variáveis de ambiente do projeto, apontando pro backend já deployado.
+
+### App nativo (mobile/)
+
+`eas.json` já tem os perfis de build configurados. Com uma conta Expo
+(grátis pra começar): `eas build --platform ios --profile preview` builda
+o binário na nuvem deles — não precisa de Mac/Xcode local, ao contrário
+do caminho Capacitor que foi abandonado (ver `mobile/README.md` pro porquê).
+Não executado aqui — exige a conta Expo, que só você pode criar.
 
 ### O que não foi verificado aqui
 

@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Rinko",
+    "slug": "rinko",
+    "version": "1.0.0",
+    "scheme": "rinko",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "backgroundColor": "#0A0707",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rinkodigital.app"
+    },
+    "android": {
+      "package": "com.rinkodigital.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0707",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "SEND",
+          "category": ["DEFAULT"],
+          "data": [{ "mimeType": "image/*" }, { "mimeType": "application/pdf" }]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": ["expo-router"],
+    "extra": {
+      "router": {}
+    }
+  }
+}
