@@ -125,7 +125,7 @@ export function AppButton({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === "primary" ? colors.accentInk : colors.crimsonGlow} />
+        <ActivityIndicator color={variant === "primary" ? colors.accentInk : colors.violetGlow} />
       ) : (
         <Text
           style={[
@@ -161,7 +161,7 @@ export function EmptyState({ children }: { children: React.ReactNode }) {
 export function LoadingScreen() {
   return (
     <SafeAreaView style={[styles.screen, styles.centerAll]}>
-      <ActivityIndicator color={colors.crimsonGlow} size="large" />
+      <ActivityIndicator color={colors.violetGlow} size="large" />
     </SafeAreaView>
   );
 }
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   wordmark: {
     fontFamily: "serif",
     letterSpacing: 4,
-    color: colors.crimsonGlow,
+    color: colors.violetGlow,
     textAlign: "center",
   },
   card: {
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   btnPrimary: {
-    backgroundColor: colors.crimson,
+    backgroundColor: colors.violet,
   },
   btnSecondary: {
     backgroundColor: "transparent",
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     color: colors.accentInk,
   },
   btnTextGhost: {
-    color: colors.crimsonGlow,
+    color: colors.violetGlow,
   },
   btnTextDanger: {
     color: colors.bad,

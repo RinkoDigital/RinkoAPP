@@ -39,7 +39,7 @@ export function HomePage() {
 
         <div className="card" style={{ background: "var(--surface-2)" }}>
           <div className="faint">OUTSTANDING EARNINGS</div>
-          <div className="mono" style={{ fontSize: "2rem", color: "var(--crimson-glow)", marginTop: 4 }}>
+          <div className="mono" style={{ fontSize: "2rem", color: "var(--violet-glow)", marginTop: 4 }}>
             {ledger ? formatCents(ledger.outstanding_total_cents) : <span className="spinner" />}
           </div>
           <Link to="/ledger" className="btn-ghost">

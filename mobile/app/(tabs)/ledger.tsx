@@ -35,7 +35,7 @@ export default function LedgerScreen() {
         {ledger ? (
           <Mono style={styles.amount}>{formatCents(ledger.outstanding_total_cents)}</Mono>
         ) : (
-          <ActivityIndicator color={colors.crimsonGlow} style={{ marginTop: 8 }} />
+          <ActivityIndicator color={colors.violetGlow} style={{ marginTop: 8 }} />
         )}
       </Card>
 
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   },
   amount: {
     fontSize: 32,
-    color: colors.crimsonGlow,
+    color: colors.violetGlow,
     marginTop: 4,
   },
   rowBetween: {

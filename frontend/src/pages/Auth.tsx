@@ -90,7 +90,7 @@ export function AuthPage() {
               className="btn-ghost"
               style={{
                 flex: 1,
-                borderBottom: mode === "login" ? "2px solid var(--crimson)" : "2px solid transparent",
+                borderBottom: mode === "login" ? "2px solid var(--violet)" : "2px solid transparent",
                 color: mode === "login" ? "var(--text)" : "var(--text-faint)",
                 fontWeight: 600,
               }}
@@ -103,7 +103,7 @@ export function AuthPage() {
               className="btn-ghost"
               style={{
                 flex: 1,
-                borderBottom: mode === "signup" ? "2px solid var(--crimson)" : "2px solid transparent",
+                borderBottom: mode === "signup" ? "2px solid var(--violet)" : "2px solid transparent",
                 color: mode === "signup" ? "var(--text)" : "var(--text-faint)",
                 fontWeight: 600,
               }}

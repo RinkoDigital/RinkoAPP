@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   tabUnderline: {
     height: 2,
-    backgroundColor: colors.crimson,
+    backgroundColor: colors.violet,
     width: "100%",
     marginTop: 10,
     position: "absolute",

@@ -271,7 +271,7 @@ export default function SessionDetailScreen() {
   if (!session) {
     return (
       <Screen>
-        <ActivityIndicator color={colors.crimsonGlow} />
+        <ActivityIndicator color={colors.violetGlow} />
       </Screen>
     );
   }
@@ -540,7 +540,7 @@ export default function SessionDetailScreen() {
 
 const styles = StyleSheet.create({
   backLink: {
-    color: colors.crimsonGlow,
+    color: colors.violetGlow,
   },
   rowBetween: {
     flexDirection: "row",
@@ -577,8 +577,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardSunken,
   },
   chipActive: {
-    backgroundColor: colors.crimson,
-    borderColor: colors.crimson,
+    backgroundColor: colors.violet,
+    borderColor: colors.violet,
   },
   chipText: {
     color: colors.textMuted,
@@ -601,7 +601,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   refreshLink: {
-    color: colors.crimsonGlow,
+    color: colors.violetGlow,
     fontSize: 13,
   },
   packageRow: {

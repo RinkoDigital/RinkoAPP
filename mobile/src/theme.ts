@@ -4,9 +4,9 @@ export const colors = {
   surface2: "#1d1414",
   border: "#332322",
   paper: "#f4ede8",
-  crimson: "#c81f34",
-  crimsonDeep: "#7c1220",
-  crimsonGlow: "#e6394c",
+  violet: "#7c3aed",
+  violetDeep: "#4c1d95",
+  violetGlow: "#a78bfa",
   sakura: "#e98da0",
 
   bg: "#0a0707",
@@ -16,7 +16,7 @@ export const colors = {
   textMuted: "#b7a49d",
   textFaint: "#7d6963",
   line: "#332322",
-  accent: "#c81f34",
+  accent: "#7c3aed",
   accentInk: "#fff5f2",
 
   good: "#4f9463",

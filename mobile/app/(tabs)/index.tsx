@@ -44,7 +44,7 @@ export default function HomeScreen() {
           {ledger ? (
             <Mono style={styles.ledgerAmount}>{formatCents(ledger.outstanding_total_cents)}</Mono>
           ) : (
-            <ActivityIndicator color={colors.crimsonGlow} style={{ marginVertical: 8 }} />
+            <ActivityIndicator color={colors.violetGlow} style={{ marginVertical: 8 }} />
           )}
           <Pressable onPress={() => router.push("/(tabs)/ledger")}>
             <Text style={styles.ledgerLink}>Ver payment ledger →</Text>
@@ -53,7 +53,7 @@ export default function HomeScreen() {
 
         <Text style={styles.sectionTitle}>Sessões recentes</Text>
 
-        {sessions === null && <ActivityIndicator color={colors.crimsonGlow} />}
+        {sessions === null && <ActivityIndicator color={colors.violetGlow} />}
         {sessions !== null && sessions.length === 0 && (
           <EmptyState>Nenhuma work session ainda. Toque em + para começar.</EmptyState>
         )}
@@ -95,12 +95,12 @@ const styles = StyleSheet.create({
   },
   ledgerAmount: {
     fontSize: 32,
-    color: colors.crimsonGlow,
+    color: colors.violetGlow,
     marginTop: 4,
     marginBottom: 8,
   },
   ledgerLink: {
-    color: colors.crimsonGlow,
+    color: colors.violetGlow,
     fontSize: 13,
   },
   sectionTitle: {
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.crimson,
+    backgroundColor: colors.violet,
     alignItems: "center",
     justifyContent: "center",
   },

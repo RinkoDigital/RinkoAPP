@@ -4,9 +4,9 @@
   --surface-2: #1d1414;
   --border: #332322;
   --paper: #f4ede8;
-  --crimson: #c81f34;
-  --crimson-deep: #7c1220;
-  --crimson-glow: #e6394c;
+  --violet: #7c3aed;
+  --violet-deep: #4c1d95;
+  --violet-glow: #a78bfa;
   --sakura: #e98da0;
 
   --bg: var(--ink);
@@ -16,7 +16,7 @@
   --text-muted: #b7a49d;
   --text-faint: #7d6963;
   --line: var(--border);
-  --accent: var(--crimson);
+  --accent: var(--violet);
   --accent-ink: #fff5f2;
 
   --good: #4f9463;
@@ -62,7 +62,7 @@ textarea {
 }
 
 a {
-  color: var(--crimson-glow);
+  color: var(--violet-glow);
 }
 
 /* ---------- Decorative motifs (hero/header only — never on data screens) ---------- */
@@ -72,8 +72,8 @@ a {
   border-radius: 50%;
   background: radial-gradient(
     circle at 50% 55%,
-    rgba(200, 31, 52, 0.45),
-    rgba(200, 31, 52, 0.08) 45%,
+    rgba(124, 58, 237, 0.45),
+    rgba(124, 58, 237, 0.08) 45%,
     transparent 70%
   );
   pointer-events: none;
@@ -94,7 +94,7 @@ a {
   background-image: radial-gradient(
     circle at 9px 0,
     transparent 8px,
-    var(--crimson-deep) 9px,
+    var(--violet-deep) 9px,
     transparent 10px
   );
   background-size: 20px 16px;
@@ -162,7 +162,7 @@ a {
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
-  border-color: var(--crimson);
+  border-color: var(--violet);
 }
 
 .btn {
@@ -180,12 +180,12 @@ a {
 }
 
 .btn-primary {
-  background: var(--crimson);
+  background: var(--violet);
   color: var(--accent-ink);
 }
 
 .btn-primary:hover {
-  background: var(--crimson-glow);
+  background: var(--violet-glow);
 }
 
 .btn-secondary {
@@ -196,7 +196,7 @@ a {
 
 .btn-ghost {
   background: transparent;
-  color: var(--crimson-glow);
+  color: var(--violet-glow);
   border: none;
   padding: 6px 0;
   width: auto;
@@ -299,7 +299,7 @@ a {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--crimson);
+  background: var(--violet);
   color: var(--accent-ink);
   border: none;
   font-size: 1.6rem;
@@ -327,7 +327,7 @@ a {
 }
 
 .bottom-nav a.active {
-  color: var(--crimson-glow);
+  color: var(--violet-glow);
 }
 
 .empty-state {
@@ -364,7 +364,7 @@ a {
   width: 16px;
   height: 16px;
   border: 2px solid var(--line);
-  border-top-color: var(--crimson-glow);
+  border-top-color: var(--violet-glow);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }

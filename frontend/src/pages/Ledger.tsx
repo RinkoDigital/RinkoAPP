@@ -27,7 +27,7 @@ export function LedgerPage() {
 
         <div className="card" style={{ background: "var(--surface-2)", textAlign: "center" }}>
           <div className="faint">OUTSTANDING</div>
-          <div className="mono" style={{ fontSize: "2rem", color: "var(--crimson-glow)" }}>
+          <div className="mono" style={{ fontSize: "2rem", color: "var(--violet-glow)" }}>
             {ledger ? formatCents(ledger.outstanding_total_cents) : <span className="spinner" />}
           </div>
         </div>

@@ -81,7 +81,7 @@ export function WorkReportPage() {
           />
           <div
             className="wordmark"
-            style={{ color: "var(--crimson-glow)", fontSize: "0.9rem", position: "relative", zIndex: 1 }}
+            style={{ color: "var(--violet-glow)", fontSize: "0.9rem", position: "relative", zIndex: 1 }}
           >
             SHIFTPROOF — INDEPENDENT WORK RECORD
           </div>

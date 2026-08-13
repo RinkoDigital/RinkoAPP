@@ -70,7 +70,7 @@ export default function WorkReportScreen() {
   if (!report) {
     return (
       <Screen>
-        <ActivityIndicator color={colors.crimsonGlow} />
+        <ActivityIndicator color={colors.violetGlow} />
       </Screen>
     );
   }
@@ -157,11 +157,11 @@ export default function WorkReportScreen() {
 
 const styles = StyleSheet.create({
   backLink: {
-    color: colors.crimsonGlow,
+    color: colors.violetGlow,
   },
   reportTitle: {
     fontFamily: "serif",
-    color: colors.crimsonGlow,
+    color: colors.violetGlow,
     fontSize: 14,
   },
   cardTitle: {

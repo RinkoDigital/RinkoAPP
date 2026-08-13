@@ -144,8 +144,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardSunken,
   },
   chipActive: {
-    backgroundColor: colors.crimson,
-    borderColor: colors.crimson,
+    backgroundColor: colors.violet,
+    borderColor: colors.violet,
   },
   chipText: {
     color: colors.textMuted,
