@@ -461,7 +461,7 @@ Fase 1  Driver Work Records        ← isto aqui
 Fase 2  Payments + Disputes
 Fase 3  Driver Management
 Fase 4  ShiftProof Dispatch
-Fase 5  ShiftProof Routes
+Fase 5  ShiftProof Routes          (inclui otimização de rota — ver Próximos passos)
 Fase 6  ShiftProof Warehouse
         → ShiftProof Last-Mile Network
 ```
@@ -476,7 +476,13 @@ evidence) são desenhadas pra continuar valendo conforme o produto evolui
   suficiente pra pagar por isso, antes de expandir.
 - Geração de PDF do Work Report (hoje é `.docx`) — mais universal pra
   anexar numa disputa.
-- Confirmar com UniUni/GOFO/OnTrac se algum tipo de integração
-  (webhook, API, importação de arquivo) é viável — nada disso existe
-  hoje; o motorista registra tudo manualmente ou anexa a evidência que já
-  tem.
+- Integração com transportadora além do rastreamento (Track123, já
+  existe — ver "Rastreamento de pacotes" acima): webhook ou importação
+  de arquivo direto da UniUni/GOFO/OnTrac, se algum dia for viável.
+- **Otimização de rota (Fase 5)**: reordenar as paradas do motorista pra
+  minimizar distância/tempo total, via API de rotas (Google Directions,
+  Mapbox Optimization, etc — nenhuma escolhida ainda). Adiado
+  deliberadamente pra depois do MVP estar validado com motoristas de
+  verdade — é uma mudança de escopo grande (o app passaria a opinar
+  sobre a rota em si, não só documentar o que já foi feito) e tem custo
+  de API por chamada.
