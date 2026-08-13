@@ -8,19 +8,22 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "http://localhost:8000"
+        "EXPO_PUBLIC_API_BASE_URL": "http://localhost:8000",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "822609430308-2k1nkgh32960tajtbhuadttpha3gibc8.apps.googleusercontent.com"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://shiftproof-api.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://shiftproof-api.onrender.com",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "822609430308-2k1nkgh32960tajtbhuadttpha3gibc8.apps.googleusercontent.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://shiftproof-api.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://shiftproof-api.onrender.com",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "822609430308-2k1nkgh32960tajtbhuadttpha3gibc8.apps.googleusercontent.com"
       }
     }
   },

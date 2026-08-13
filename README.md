@@ -161,11 +161,23 @@ application"**, criado uma vez, reusado nos três lugares):
   se faltar, o Google recusa o login e mostra exatamente qual URI está
   esperando, então dá pra copiar dali.
 
-Nenhum desses três lugares tem credencial de verdade configurada neste
-ambiente de desenvolvimento — os botões de "Continuar com Google"
-existem, foram testados até o ponto de renderizar e não travar a tela ao
-clicar (mobile e web), mas o fluxo completo, com o Client ID real, ainda
-não foi validado de ponta a ponta.
+O client "Web application" já existe (`822609430308-2k1nkgh32960tajtbhuadttpha3gibc8.apps.googleusercontent.com`,
+com `http://localhost:5173` em "Authorized JavaScript origins") e está
+configurado localmente nos três lugares (`.env` na raiz, `frontend/.env`,
+`mobile/.env` — nenhum desses é versionado; o valor também está em
+`mobile/eas.json`, commitado, já que Client ID não é segredo). Verificado
+que os três apps carregam o valor certo (o backend lê via `Settings`, o
+botão aparece nos dois apps, o build do frontend embute o ID correto no
+bundle). Falta:
+
+- Adicionar a URL de produção (Netlify) em "Authorized JavaScript
+  origins" quando o front-end for implantado de verdade.
+- Adicionar o redirect URI do app mobile em "Authorized redirect URIs" —
+  só dá pra descobrir o valor exato testando num build real (o Google
+  mostra qual URI faltou na tela de erro).
+- Validar o fluxo de ponta a ponta com login de verdade — não deu pra
+  testar aqui porque completar o login exige uma conta Google real
+  interagindo com a tela de consentimento, o que não é automatizável.
 
 **O que ainda é placeholder:** não existe provedor de email real (SES,
 SendGrid...) — `app/services/email.py` só loga a mensagem (`logger.info`),
