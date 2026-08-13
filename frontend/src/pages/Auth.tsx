@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
 import { isGoogleSignInConfigured, renderGoogleButton } from "../api/googleAuth";
-import kitsuneMask from "../assets/kitsune-mask.webp";
+import authLogo from "../assets/auth-logo.png";
 
 export function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -70,16 +70,12 @@ export function AuthPage() {
         />
 
         <div style={{ textAlign: "center", marginBottom: 36, position: "relative", zIndex: 1 }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: -8 }}>
+          <div style={{ display: "flex", justifyContent: "center" }}>
             <img
-              src={kitsuneMask}
-              alt=""
-              aria-hidden="true"
-              style={{ width: 220, maxWidth: "80%", height: "auto" }}
+              src={authLogo}
+              alt="ShiftProof"
+              style={{ width: 260, maxWidth: "80%", height: "auto" }}
             />
-          </div>
-          <div className="wordmark" style={{ fontSize: "1.6rem", color: "var(--crimson-glow)" }}>
-            SHIFTPROOF
           </div>
           <div className="faint" style={{ letterSpacing: "0.08em" }}>
             Your routes. Your work. Your records.

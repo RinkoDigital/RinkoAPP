@@ -9,7 +9,7 @@ import { isAppleSignInAvailable, signInWithApple } from "../src/native/appleAuth
 import { isGoogleSignInConfigured, useGoogleIdToken } from "../src/native/googleAuth";
 import { colors } from "../src/theme";
 
-const kitsuneMask = require("../assets/kitsune-mask.webp");
+const authLogo = require("../assets/auth-logo.png");
 
 export default function AuthScreen() {
   const { isAuthenticated, isLoading: authLoading, login, signup, loginWithGoogle, loginWithApple } =
@@ -78,8 +78,7 @@ export default function AuthScreen() {
   return (
     <Screen>
       <View style={styles.hero}>
-        <Image source={kitsuneMask} style={styles.mask} resizeMode="contain" />
-        <Text style={styles.wordmark}>SHIFTPROOF</Text>
+        <Image source={authLogo} style={styles.logo} resizeMode="contain" />
         <Text style={styles.tagline}>Your routes. Your work. Your records.</Text>
       </View>
 
@@ -157,16 +156,9 @@ const styles = StyleSheet.create({
     marginTop: 40,
     marginBottom: 32,
   },
-  mask: {
-    width: 180,
-    height: 198,
-    marginBottom: -8,
-  },
-  wordmark: {
-    fontFamily: "serif",
-    fontSize: 26,
-    letterSpacing: 4,
-    color: colors.crimsonGlow,
+  logo: {
+    width: 260,
+    height: 182,
   },
   tagline: {
     color: colors.textMuted,
