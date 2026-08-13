@@ -269,8 +269,11 @@ class Package(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("work_sessions.id"), nullable=False)
     tracking_code: Mapped[str] = mapped_column(String(255), nullable=False)
-    outcome: Mapped[PackageOutcome] = mapped_column(
-        Enum(PackageOutcome, native_enum=False), nullable=False
+    # Null means "pending" — imported from a carrier (e.g. bulk-imported via
+    # Track123) but not yet resolved by the driver. Packages entered through
+    # the single-package flow always set this at creation time.
+    outcome: Mapped[PackageOutcome | None] = mapped_column(
+        Enum(PackageOutcome, native_enum=False), nullable=True
     )
     source: Mapped[PackageSource] = mapped_column(
         Enum(PackageSource, native_enum=False), nullable=False, default=PackageSource.MANUAL
@@ -282,6 +285,12 @@ class Package(Base):
     pod_captured_at: Mapped[datetime | None] = mapped_column(nullable=True)
     pod_latitude: Mapped[float | None] = mapped_column(nullable=True)
     pod_longitude: Mapped[float | None] = mapped_column(nullable=True)
+
+    # Best-effort, informational only — pulled from the carrier's tracking
+    # API (Track123). Never drives `outcome`; the driver's own confirmation
+    # (with photo, for deliveries) stays the actual evidence.
+    carrier_status: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    carrier_status_updated_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     return_reason: Mapped[ReturnReason | None] = mapped_column(
         Enum(ReturnReason, native_enum=False), nullable=True

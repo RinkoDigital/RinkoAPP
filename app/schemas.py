@@ -204,7 +204,7 @@ class PackageOut(BaseModel):
     id: uuid.UUID
     session_id: uuid.UUID
     tracking_code: str
-    outcome: PackageOutcome
+    outcome: PackageOutcome | None
     source: PackageSource
     external_reference: str | None
     pod_photo_url: str | None
@@ -214,7 +214,46 @@ class PackageOut(BaseModel):
     pod_longitude: float | None
     return_reason: ReturnReason | None
     return_note: str | None
+    carrier_status: str | None
+    carrier_status_updated_at: datetime | None
     created_at: datetime
+
+
+class PackageBulkImportRequest(BaseModel):
+    tracking_codes: list[str]
+    # None lets Track123 auto-detect the carrier from the tracking number
+    # format; pass e.g. "uniuni" when you know it.
+    courier_code: str | None = None
+
+    @model_validator(mode="after")
+    def _validate_tracking_codes(self):
+        if not self.tracking_codes:
+            raise ValueError("tracking_codes must not be empty")
+        return self
+
+
+class PackageBulkImportResult(BaseModel):
+    created: list[PackageOut]
+    skipped_duplicates: list[str]
+
+
+class PackageResolve(BaseModel):
+    outcome: PackageOutcome
+    pod_scan_code: str | None = None
+    pod_latitude: float | None = None
+    pod_longitude: float | None = None
+    return_reason: ReturnReason | None = None
+    return_note: str | None = None
+
+    @model_validator(mode="after")
+    def _validate_outcome_fields(self):
+        if self.outcome == PackageOutcome.RETURNED and self.return_reason is None:
+            raise ValueError("return_reason is required when outcome is 'returned'")
+        if self.outcome == PackageOutcome.DELIVERED and (
+            self.return_reason is not None or self.return_note is not None
+        ):
+            raise ValueError("return_reason/return_note are only valid when outcome is 'returned'")
+        return self
 
 
 # ---------- Work report ----------

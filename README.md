@@ -94,6 +94,9 @@ motoristas cadastrando "UniUni" têm dois registros independentes.
 | GET | `/sessions/{id}/evidence` | driver token | Lista os documentos anexados |
 | POST | `/sessions/{id}/packages` | driver token | *(opcional)* Registra prova de entrega/devolução por pacote |
 | GET | `/sessions/{id}/packages` | driver token | Lista os pacotes da sessão |
+| POST | `/sessions/{id}/packages/bulk-import` | driver token | Importa vários códigos de rastreio de uma vez (via Track123) |
+| POST | `/sessions/{id}/packages/refresh-status` | driver token | Atualiza o status de rastreio (Track123) dos pacotes importados |
+| POST | `/sessions/{id}/packages/{package_id}/resolve` | driver token | Confirma entregue/devolvido pra um pacote pendente |
 | POST | `/sessions/{id}/packages/{package_id}/pod-photo` | driver token | Upload da foto de prova daquele pacote |
 | GET | `/sessions/{id}/work-report` | driver token | O ShiftProof Work Report (JSON) — só após encerrada |
 | GET | `/sessions/{id}/work-report.docx` | driver token | O mesmo relatório, como `.docx` |
@@ -251,6 +254,48 @@ Testado de ponta a ponta nos dois apps com a localização mockada via
 Playwright (`context.set_geolocation`/`geolocation` do navegador) — o
 carimbo aparece corretamente na imagem final baixada da API, nos dois
 clientes.
+
+### Rastreamento de pacotes (Track123)
+
+`Package` sempre foi "opcional, pra quem quer granularidade além dos
+totais da sessão" — até aqui só dava pra registrar um pacote de cada vez,
+já com o resultado (entregue/devolvido) conhecido. O bulk-import muda só
+a parte de *entrada*: o motorista cola/importa os códigos de rastreio da
+rota de uma vez, em vez de digitar um por um — a confirmação de entrega
+continua sendo o motorista quem faz, com foto, do mesmo jeito de sempre.
+Isso é proposital: o ShiftProof existe pra ser o registro *independente*
+do motorista, então o status da transportadora nunca vira a evidência —
+só um dado de referência ao lado dela.
+
+- `POST /sessions/{id}/packages/bulk-import` cria um `Package` por código
+  com `outcome=null` ("pendente") e registra os códigos no
+  [Track123](https://www.track123.com) (agregador de rastreio — não é a
+  transportadora em si, é um serviço que consulta várias transportadoras
+  por uma API só). Códigos repetidos na mesma sessão são ignorados
+  (`skipped_duplicates` na resposta), não dão erro.
+- `POST /sessions/{id}/packages/refresh-status` consulta o Track123 pra
+  todos os pacotes não-manuais da sessão e atualiza `Package.carrier_status`
+  — só informativo, mostrado ao lado da entrada do motorista.
+- `POST /sessions/{id}/packages/{package_id}/resolve` é onde o motorista
+  confirma entregue/devolvido pra um pacote pendente — mesmos campos de
+  sempre (foto, motivo de devolução).
+
+Configuração: `TRACK123_API_KEY` (variável de ambiente do backend — essa
+é uma credencial de verdade, diferente do `GOOGLE_CLIENT_ID`, nunca
+deve ir pro `render.yaml`/git; configure como secret direto no Render).
+Sem essa variável, os dois endpoints de Track123 viram no-op silencioso
+(`app/services/track123.py`) — os pacotes continuam sendo criados
+normalmente, só não são registrados/consultados na API externa. Uma
+falha do Track123 (fora do ar, timeout) nunca bloqueia o motorista.
+
+**O que não foi validado de verdade**: o formato exato da resposta de
+`/track/query` (quais campos trazem o status legível) não foi confirmado
+contra uma chamada real — o sandbox onde isso foi construído não tem
+rota de rede até `api.track123.com`. `_extract_status()` em
+`app/services/track123.py` tenta alguns nomes de campo plausíveis e
+degrada pra "sem status" (em vez de quebrar) se nenhum bater; ajustar é
+uma mudança pequena e isolada nessa função, uma vez que dê pra ver uma
+resposta real.
 
 ### O ShiftProof Work Report
 

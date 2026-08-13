@@ -77,6 +77,34 @@ export type Evidence = {
   uploaded_at: string;
 };
 
+export type PackageOutcome = "delivered" | "returned";
+export type PackageSource = "manual" | "uniuni" | "gofo" | "other_platform";
+export type ReturnReason = "refused" | "wrong_address" | "damaged" | "undeliverable" | "other";
+
+export type Package = {
+  id: string;
+  session_id: string;
+  tracking_code: string;
+  outcome: PackageOutcome | null;
+  source: PackageSource;
+  external_reference: string | null;
+  pod_photo_url: string | null;
+  pod_scan_code: string | null;
+  pod_captured_at: string | null;
+  pod_latitude: number | null;
+  pod_longitude: number | null;
+  return_reason: ReturnReason | null;
+  return_note: string | null;
+  carrier_status: string | null;
+  carrier_status_updated_at: string | null;
+  created_at: string;
+};
+
+export type PackageBulkImportResult = {
+  created: Package[];
+  skipped_duplicates: string[];
+};
+
 export type WorkReport = {
   report_number: string;
   driver_name: string;

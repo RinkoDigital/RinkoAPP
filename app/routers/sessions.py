@@ -20,8 +20,11 @@ from app.plans import can_export_docx, evidence_limit
 from app.report_docx import render_work_report_docx
 from app.schemas import (
     EvidenceOut,
+    PackageBulkImportRequest,
+    PackageBulkImportResult,
     PackageCreate,
     PackageOut,
+    PackageResolve,
     WorkReport,
     WorkSessionClose,
     WorkSessionCreate,
@@ -29,7 +32,13 @@ from app.schemas import (
     WorkSessionRecordPayment,
 )
 from app.security import get_current_driver
-from app.services.packages import attach_pod_photo, create_package
+from app.services.packages import (
+    attach_pod_photo,
+    bulk_import_packages,
+    create_package,
+    refresh_carrier_status,
+    resolve_package,
+)
 from app.services.work_report import build_work_report
 from app.storage import save_evidence_file
 
@@ -311,6 +320,54 @@ def list_packages(
 ):
     session = _get_session(db, driver, session_id)
     return session.packages
+
+
+@router.post("/{session_id}/packages/bulk-import", response_model=PackageBulkImportResult, status_code=201)
+def bulk_import_packages_endpoint(
+    session_id: uuid.UUID,
+    payload: PackageBulkImportRequest,
+    db: Session = Depends(get_db),
+    driver: Driver = Depends(get_current_driver),
+):
+    """Imports a batch of tracking codes as pending packages (no outcome
+    yet) and registers them with Track123 for status tracking — the driver
+    still confirms delivered/returned themselves, with proof, same as
+    always. No-ops the Track123 side (packages are still created) if
+    TRACK123_API_KEY isn't configured."""
+    session = _get_session(db, driver, session_id)
+    created, skipped = bulk_import_packages(db, session, payload.tracking_codes, payload.courier_code)
+    return PackageBulkImportResult(created=created, skipped_duplicates=skipped)
+
+
+@router.post("/{session_id}/packages/refresh-status", response_model=list[PackageOut])
+def refresh_package_status(
+    session_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    driver: Driver = Depends(get_current_driver),
+):
+    """Polls Track123 for every carrier-imported package on the session and
+    returns the ones whose carrier_status changed — informational only,
+    doesn't touch outcome. No-ops (returns []) if Track123 isn't
+    configured or nothing changed."""
+    session = _get_session(db, driver, session_id)
+    return refresh_carrier_status(db, session)
+
+
+@router.post("/{session_id}/packages/{package_id}/resolve", response_model=PackageOut)
+def resolve_package_endpoint(
+    session_id: uuid.UUID,
+    package_id: uuid.UUID,
+    payload: PackageResolve,
+    db: Session = Depends(get_db),
+    driver: Driver = Depends(get_current_driver),
+):
+    """Records the driver's own delivered/returned confirmation for a
+    pending (carrier-imported) package."""
+    session = _get_session(db, driver, session_id)
+    package = next((p for p in session.packages if p.id == package_id), None)
+    if package is None:
+        raise HTTPException(status_code=404, detail="Package not found")
+    return resolve_package(db, package, payload)
 
 
 @router.post("/{session_id}/packages/{package_id}/pod-photo", response_model=PackageOut)

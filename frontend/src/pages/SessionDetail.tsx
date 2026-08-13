@@ -3,8 +3,23 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { formatCents, formatDate } from "../api/format";
 import { getCurrentLocation, stampImageWithLocation } from "../api/locationStamp";
-import type { Evidence, EvidenceKind, WorkSession } from "../api/types";
+import type {
+  Evidence,
+  EvidenceKind,
+  Package,
+  PackageBulkImportResult,
+  ReturnReason,
+  WorkSession,
+} from "../api/types";
 import { StatusPill } from "../components/StatusPill";
+
+const RETURN_REASONS: { value: ReturnReason; label: string }[] = [
+  { value: "refused", label: "Recusado" },
+  { value: "wrong_address", label: "Endereço errado" },
+  { value: "damaged", label: "Danificado" },
+  { value: "undeliverable", label: "Não entregável" },
+  { value: "other", label: "Outro" },
+];
 
 const EVIDENCE_KINDS: { value: EvidenceKind; label: string }[] = [
   { value: "route_screenshot", label: "Route screenshot" },
@@ -33,10 +48,20 @@ export function SessionDetailPage() {
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [uploadingEvidence, setUploadingEvidence] = useState(false);
 
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [importCourier, setImportCourier] = useState("uniuni");
+  const [importText, setImportText] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [resolveOutcome, setResolveOutcome] = useState<"delivered" | "returned">("delivered");
+  const [resolveReturnReason, setResolveReturnReason] = useState<ReturnReason>("wrong_address");
+
   function load() {
     if (!sessionId) return;
     api.get<WorkSession>(`/sessions/${sessionId}`).then(setSession).catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load"));
     api.get<Evidence[]>(`/sessions/${sessionId}/evidence`).then(setEvidence).catch(() => {});
+    api.get<Package[]>(`/sessions/${sessionId}/packages`).then(setPackages).catch(() => {});
   }
 
   useEffect(load, [sessionId]);
@@ -111,6 +136,63 @@ export function SessionDetailPage() {
       }
     } finally {
       setUploadingEvidence(false);
+    }
+  }
+
+  async function handleBulkImport(e: FormEvent) {
+    e.preventDefault();
+    if (!sessionId) return;
+    const codes = importText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (codes.length === 0) return;
+
+    setError(null);
+    setImporting(true);
+    try {
+      const result = await api.post<PackageBulkImportResult>(
+        `/sessions/${sessionId}/packages/bulk-import`,
+        { tracking_codes: codes, courier_code: importCourier || null }
+      );
+      setImportText("");
+      if (result.skipped_duplicates.length > 0) {
+        setError(`${result.skipped_duplicates.length} código(s) já existiam nessa sessão e foram ignorados.`);
+      }
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to import packages");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function handleRefreshStatus() {
+    if (!sessionId) return;
+    setError(null);
+    setRefreshingStatus(true);
+    try {
+      await api.post(`/sessions/${sessionId}/packages/refresh-status`, {});
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to refresh carrier status");
+    } finally {
+      setRefreshingStatus(false);
+    }
+  }
+
+  async function handleResolve(pkg: Package) {
+    if (!sessionId) return;
+    setError(null);
+    try {
+      await api.post(`/sessions/${sessionId}/packages/${pkg.id}/resolve`, {
+        outcome: resolveOutcome,
+        return_reason: resolveOutcome === "returned" ? resolveReturnReason : null,
+      });
+      setResolvingId(null);
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to resolve package");
     }
   }
 
@@ -230,6 +312,125 @@ export function SessionDetailPage() {
             </button>
           </form>
         )}
+
+        <div className="card">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h3 style={{ margin: 0 }}>Pacotes</h3>
+            {packages.some((p) => p.source !== "manual") && (
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={handleRefreshStatus}
+                disabled={refreshingStatus}
+                style={{ fontSize: 13 }}
+              >
+                {refreshingStatus ? <span className="spinner" /> : "↻ Atualizar status"}
+              </button>
+            )}
+          </div>
+
+          <div style={{ marginTop: 12, marginBottom: 12 }}>
+            {packages.length === 0 && <span className="faint">Nenhum pacote registrado ainda.</span>}
+            {packages.map((pkg) => (
+              <div
+                key={pkg.id}
+                className="row"
+                style={{ flexDirection: "column", alignItems: "stretch", gap: 6, padding: "10px 0" }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span className="mono">{pkg.tracking_code}</span>
+                  {pkg.outcome === null ? (
+                    <span className="pill pill-pending">Pendente</span>
+                  ) : (
+                    <span className={`pill ${pkg.outcome === "delivered" ? "pill-good" : "pill-bad"}`}>
+                      {pkg.outcome === "delivered" ? "Entregue" : "Devolvido"}
+                    </span>
+                  )}
+                </div>
+                {pkg.carrier_status && (
+                  <span className="faint" style={{ fontSize: 12 }}>
+                    {pkg.source !== "manual" ? pkg.source.toUpperCase() : ""} · {pkg.carrier_status}
+                  </span>
+                )}
+
+                {pkg.outcome === null && resolvingId !== pkg.id && (
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    style={{ alignSelf: "flex-start", fontSize: 13 }}
+                    onClick={() => setResolvingId(pkg.id)}
+                  >
+                    Confirmar entrega/devolução
+                  </button>
+                )}
+
+                {resolvingId === pkg.id && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <select
+                      value={resolveOutcome}
+                      onChange={(e) => setResolveOutcome(e.target.value as "delivered" | "returned")}
+                    >
+                      <option value="delivered">Entregue</option>
+                      <option value="returned">Devolvido</option>
+                    </select>
+                    {resolveOutcome === "returned" && (
+                      <select
+                        value={resolveReturnReason}
+                        onChange={(e) => setResolveReturnReason(e.target.value as ReturnReason)}
+                      >
+                        {RETURN_REASONS.map((r) => (
+                          <option key={r.value} value={r.value}>
+                            {r.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button type="button" className="btn btn-primary" onClick={() => handleResolve(pkg)}>
+                        Confirmar
+                      </button>
+                      <button type="button" className="btn-ghost" onClick={() => setResolvingId(null)}>
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <form onSubmit={handleBulkImport}>
+            <div className="field">
+              <label htmlFor="importCourier">Transportadora</label>
+              <select
+                id="importCourier"
+                value={importCourier}
+                onChange={(e) => setImportCourier(e.target.value)}
+              >
+                <option value="uniuni">UniUni</option>
+                <option value="gofo">GOFO</option>
+                <option value="">Detectar automaticamente</option>
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="importCodes">Códigos de rastreio (um por linha)</label>
+              <textarea
+                id="importCodes"
+                rows={4}
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                placeholder={"LV209031969CN\nLV209031970CN"}
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn btn-secondary"
+              disabled={importing || !importText.trim()}
+            >
+              {importing ? <span className="spinner" /> : "Importar pacotes"}
+            </button>
+          </form>
+        </div>
 
         <div className="card">
           <h3 style={{ marginTop: 0 }}>Evidence</h3>

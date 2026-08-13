@@ -36,5 +36,10 @@ class Settings(BaseSettings):
     google_client_id: str = ""  # OAuth 2.0 "Web application" client ID
     apple_bundle_id: str = "com.rinkodigital.app"  # aud claim on the Sign in with Apple identity token
 
+    # Track123 (open.track123.com) — carrier package tracking aggregator.
+    # Optional: without it, bulk-import/status-refresh just no-op (packages
+    # can still be entered one at a time, same as before this existed).
+    track123_api_key: str = ""
+
 
 settings = Settings()

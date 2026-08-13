@@ -5,7 +5,14 @@ import * as DocumentPicker from "expo-document-picker";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { api, ApiError } from "../../../src/api/client";
 import { formatCents, formatDate } from "../../../src/api/format";
-import type { Evidence, EvidenceKind, WorkSession } from "../../../src/api/types";
+import type {
+  Evidence,
+  EvidenceKind,
+  Package,
+  PackageBulkImportResult,
+  ReturnReason,
+  WorkSession,
+} from "../../../src/api/types";
 import { LocationStamper, type LocationStamperHandle } from "../../../src/components/LocationStamper";
 import { StatusPill } from "../../../src/components/StatusPill";
 import {
@@ -32,6 +39,14 @@ const EVIDENCE_KINDS: { value: EvidenceKind; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
+const RETURN_REASONS: { value: ReturnReason; label: string }[] = [
+  { value: "refused", label: "Recusado" },
+  { value: "wrong_address", label: "Endereço errado" },
+  { value: "damaged", label: "Danificado" },
+  { value: "undeliverable", label: "Não entregável" },
+  { value: "other", label: "Outro" },
+];
+
 export default function SessionDetailScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const router = useRouter();
@@ -50,6 +65,15 @@ export default function SessionDetailScreen() {
   const [uploadingEvidence, setUploadingEvidence] = useState(false);
   const stamperRef = useRef<LocationStamperHandle>(null);
 
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [importCourier, setImportCourier] = useState("uniuni");
+  const [importText, setImportText] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [resolveOutcome, setResolveOutcome] = useState<"delivered" | "returned">("delivered");
+  const [resolveReturnReason, setResolveReturnReason] = useState<ReturnReason>("wrong_address");
+
   const load = useCallback(() => {
     if (!sessionId) return;
     api
@@ -59,6 +83,10 @@ export default function SessionDetailScreen() {
     api
       .get<Evidence[]>(`/sessions/${sessionId}/evidence`)
       .then(setEvidence)
+      .catch(() => {});
+    api
+      .get<Package[]>(`/sessions/${sessionId}/packages`)
+      .then(setPackages)
       .catch(() => {});
   }, [sessionId]);
 
@@ -95,6 +123,62 @@ export default function SessionDetailScreen() {
       setError(err instanceof ApiError ? err.message : "Failed to record payment");
     } finally {
       setRecordingPayment(false);
+    }
+  }
+
+  async function handleBulkImport() {
+    if (!sessionId) return;
+    const codes = importText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (codes.length === 0) return;
+
+    setError(null);
+    setImporting(true);
+    try {
+      const result = await api.post<PackageBulkImportResult>(
+        `/sessions/${sessionId}/packages/bulk-import`,
+        { tracking_codes: codes, courier_code: importCourier || null }
+      );
+      setImportText("");
+      if (result.skipped_duplicates.length > 0) {
+        setError(`${result.skipped_duplicates.length} código(s) já existiam nessa sessão e foram ignorados.`);
+      }
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to import packages");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function handleRefreshStatus() {
+    if (!sessionId) return;
+    setError(null);
+    setRefreshingStatus(true);
+    try {
+      await api.post(`/sessions/${sessionId}/packages/refresh-status`, {});
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to refresh carrier status");
+    } finally {
+      setRefreshingStatus(false);
+    }
+  }
+
+  async function handleResolve(pkg: Package) {
+    if (!sessionId) return;
+    setError(null);
+    try {
+      await api.post(`/sessions/${sessionId}/packages/${pkg.id}/resolve`, {
+        outcome: resolveOutcome,
+        return_reason: resolveOutcome === "returned" ? resolveReturnReason : null,
+      });
+      setResolvingId(null);
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to resolve package");
     }
   }
 
@@ -256,6 +340,142 @@ export default function SessionDetailScreen() {
       )}
 
       <Card>
+        <View style={styles.rowBetween}>
+          <Text style={styles.cardTitle}>Pacotes</Text>
+          {packages.some((p) => p.source !== "manual") && (
+            <Pressable onPress={handleRefreshStatus} disabled={refreshingStatus}>
+              <Text style={styles.refreshLink}>
+                {refreshingStatus ? "..." : "↻ Atualizar status"}
+              </Text>
+            </Pressable>
+          )}
+        </View>
+
+        <View style={{ marginBottom: 14 }}>
+          {packages.length === 0 && <Faint>Nenhum pacote registrado ainda.</Faint>}
+          {packages.map((pkg) => (
+            <View key={pkg.id} style={styles.packageRow}>
+              <View style={styles.rowBetween}>
+                <Mono>{pkg.tracking_code}</Mono>
+                <View
+                  style={[
+                    styles.outcomePill,
+                    pkg.outcome === null && { backgroundColor: colors.pendingBg },
+                    pkg.outcome === "delivered" && { backgroundColor: colors.goodBg },
+                    pkg.outcome === "returned" && { backgroundColor: colors.badBg },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.outcomePillText,
+                      pkg.outcome === null && { color: colors.pending },
+                      pkg.outcome === "delivered" && { color: colors.good },
+                      pkg.outcome === "returned" && { color: colors.bad },
+                    ]}
+                  >
+                    {pkg.outcome === null ? "PENDENTE" : pkg.outcome === "delivered" ? "ENTREGUE" : "DEVOLVIDO"}
+                  </Text>
+                </View>
+              </View>
+
+              {pkg.carrier_status && (
+                <Faint style={{ fontSize: 12, marginTop: 2 }}>
+                  {pkg.source !== "manual" ? pkg.source.toUpperCase() : ""} · {pkg.carrier_status}
+                </Faint>
+              )}
+
+              {pkg.outcome === null && resolvingId !== pkg.id && (
+                <Pressable onPress={() => setResolvingId(pkg.id)} style={{ marginTop: 6 }}>
+                  <Text style={styles.refreshLink}>Confirmar entrega/devolução</Text>
+                </Pressable>
+              )}
+
+              {resolvingId === pkg.id && (
+                <View style={{ marginTop: 8, gap: 8 }}>
+                  <View style={styles.chipList}>
+                    {(["delivered", "returned"] as const).map((o) => (
+                      <Pressable
+                        key={o}
+                        onPress={() => setResolveOutcome(o)}
+                        style={[styles.chip, resolveOutcome === o && styles.chipActive]}
+                      >
+                        <Text style={[styles.chipText, resolveOutcome === o && styles.chipTextActive]}>
+                          {o === "delivered" ? "Entregue" : "Devolvido"}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  {resolveOutcome === "returned" && (
+                    <View style={styles.chipList}>
+                      {RETURN_REASONS.map((r) => (
+                        <Pressable
+                          key={r.value}
+                          onPress={() => setResolveReturnReason(r.value)}
+                          style={[styles.chip, resolveReturnReason === r.value && styles.chipActive]}
+                        >
+                          <Text
+                            style={[
+                              styles.chipText,
+                              resolveReturnReason === r.value && styles.chipTextActive,
+                            ]}
+                          >
+                            {r.label}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    <AppButton title="Confirmar" onPress={() => handleResolve(pkg)} style={{ flex: 1 }} />
+                    <AppButton
+                      title="Cancelar"
+                      variant="ghost"
+                      onPress={() => setResolvingId(null)}
+                      style={{ flex: 1 }}
+                    />
+                  </View>
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+
+        <Text style={styles.label}>Transportadora</Text>
+        <View style={styles.chipList}>
+          {[
+            { value: "uniuni", label: "UniUni" },
+            { value: "gofo", label: "GOFO" },
+            { value: "", label: "Auto" },
+          ].map((c) => (
+            <Pressable
+              key={c.value}
+              onPress={() => setImportCourier(c.value)}
+              style={[styles.chip, importCourier === c.value && styles.chipActive]}
+            >
+              <Text style={[styles.chipText, importCourier === c.value && styles.chipTextActive]}>
+                {c.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <Field
+          label="Códigos de rastreio (um por linha)"
+          value={importText}
+          onChangeText={setImportText}
+          multiline
+          numberOfLines={4}
+          placeholder={"LV209031969CN\nLV209031970CN"}
+        />
+        <AppButton
+          title="Importar pacotes"
+          variant="secondary"
+          onPress={handleBulkImport}
+          loading={importing}
+          disabled={!importText.trim()}
+        />
+      </Card>
+
+      <Card>
         <Text style={styles.cardTitle}>Evidence</Text>
         <View style={styles.chipList}>
           {evidence.length === 0 && <Faint>Nenhuma evidência anexada ainda.</Faint>}
@@ -379,5 +599,24 @@ const styles = StyleSheet.create({
   evidenceChipText: {
     color: colors.text,
     fontSize: 12,
+  },
+  refreshLink: {
+    color: colors.crimsonGlow,
+    fontSize: 13,
+  },
+  packageRow: {
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+    paddingVertical: 10,
+  },
+  outcomePill: {
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+  },
+  outcomePillText: {
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
 });
