@@ -15,6 +15,8 @@ services:
         value: local
       - key: EMAIL_BACKEND
         value: log
+      - key: GOOGLE_CLIENT_ID
+        value: 822609430308-2k1nkgh32960tajtbhuadttpha3gibc8.apps.googleusercontent.com
       # Once you have an S3-compatible bucket and an SMTP provider, set
       # STORAGE_BACKEND=s3 / EMAIL_BACKEND=smtp here and add the matching
       # S3_*/SMTP_* vars from .env.example — see README's Deploy section.
