@@ -1,0 +1,190 @@
+{
+  "common": {
+    "failedToLoad": "Failed to load"
+  },
+  "nav": {
+    "home": "Home",
+    "ledger": "Ledger",
+    "account": "Account"
+  },
+  "statusPill": {
+    "pending": "Pending",
+    "partial": "Partial",
+    "received": "Received"
+  },
+  "auth": {
+    "tagline": "Your routes. Your work. Your records.",
+    "login": "Log in",
+    "signup": "Sign up",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "orContinueWith": "or continue with",
+    "continueWithGoogle": "Continue with Google",
+    "privacyPolicy": "Privacy Policy",
+    "errors": {
+      "googleSignInFailed": "Failed to sign in with Google",
+      "appleSignInFailed": "Failed to sign in with Apple",
+      "somethingWentWrong": "Something went wrong"
+    }
+  },
+  "home": {
+    "greeting": "Good afternoon, {{name}}",
+    "outstandingEarnings": "OUTSTANDING EARNINGS",
+    "viewPaymentLedger": "View payment ledger →",
+    "recentSessions": "Recent sessions",
+    "noSessionsYet": "No work sessions yet. Tap + to start."
+  },
+  "startSession": {
+    "title": "Start Work Session",
+    "carrierLabel": "Carrier / Contractor",
+    "newCarrierOption": "+ New contractor",
+    "newCarrierNameLabel": "Contractor name",
+    "newCarrierPlaceholder": "UniUni, GOFO, OnTrac…",
+    "routeIdLabel": "Route ID",
+    "dateLabel": "Date (YYYY-MM-DD)",
+    "packagesAssignedLabel": "Packages assigned",
+    "rateLabel": "Agreed rate ($/package)",
+    "ratePlaceholder": "1.80",
+    "submit": "Start Work Session",
+    "errors": {
+      "carrierNameRequired": "Enter the contractor's name"
+    }
+  },
+  "sessionDetail": {
+    "back": "← Back",
+    "packagesAssigned": "Packages assigned",
+    "packagesCompleted": "Packages completed",
+    "agreedRate": "Agreed rate",
+    "expectedGross": "Expected gross",
+    "outstanding": "Outstanding",
+    "closeSession": {
+      "title": "Close session",
+      "exceptions": "Exceptions",
+      "mileage": "Mileage",
+      "submit": "Close and generate Work Report"
+    },
+    "recordPayment": {
+      "title": "Record payment received",
+      "receivedLabel": "Received ($)",
+      "submit": "Record payment"
+    },
+    "packages": {
+      "title": "Packages",
+      "refreshStatus": "↻ Refresh status",
+      "refreshing": "...",
+      "none": "No packages registered yet.",
+      "outcome": {
+        "pending": "PENDING",
+        "delivered": "DELIVERED",
+        "returned": "RETURNED"
+      },
+      "confirmOutcome": "Confirm delivered/returned",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "outcomeDelivered": "Delivered",
+      "outcomeReturned": "Returned",
+      "courierLabel": "Carrier",
+      "courierAuto": "Auto",
+      "importCodesLabel": "Tracking codes (one per line)",
+      "importPlaceholder": "LV209031969CN\nLV209031970CN",
+      "importSubmit": "Import packages",
+      "skippedDuplicates": "{{count}} code(s) already existed on this session and were skipped.",
+      "errors": {
+        "refreshFailed": "Failed to refresh carrier status",
+        "resolveFailed": "Failed to resolve package",
+        "importFailed": "Failed to import packages"
+      }
+    },
+    "evidence": {
+      "title": "Evidence",
+      "none": "No evidence attached yet.",
+      "typeLabel": "Type",
+      "camera": "Camera",
+      "gallery": "Gallery",
+      "pdf": "PDF",
+      "kinds": {
+        "routeScreenshot": "Route screenshot",
+        "rateScreenshot": "Rate screenshot",
+        "gpsSession": "GPS session",
+        "completionRecord": "Completion record",
+        "settlementStatement": "Settlement statement",
+        "other": "Other"
+      },
+      "permissionDeniedCamera": "Camera permission denied.",
+      "permissionDeniedGallery": "Gallery permission denied.",
+      "errors": {
+        "uploadFailed": "Failed to upload evidence"
+      }
+    },
+    "viewWorkReport": "View Work Report",
+    "errors": {
+      "closeFailed": "Failed to close session",
+      "paymentFailed": "Failed to record payment"
+    }
+  },
+  "returnReasons": {
+    "refused": "Refused",
+    "wrongAddress": "Wrong address",
+    "damaged": "Damaged",
+    "undeliverable": "Undeliverable",
+    "other": "Other"
+  },
+  "workReport": {
+    "back": "← Back",
+    "title": "SHIFTPROOF — INDEPENDENT WORK RECORD",
+    "driver": "Driver",
+    "carrier": "Carrier / Contractor",
+    "serviceDate": "Service date",
+    "routeId": "Route ID",
+    "workRecord": {
+      "title": "Work Record",
+      "routeStarted": "Route started",
+      "routeCompleted": "Route completed",
+      "packagesAssigned": "Packages assigned",
+      "completed": "Completed",
+      "exceptions": "Exceptions",
+      "distance": "Distance"
+    },
+    "compensation": {
+      "title": "Compensation Record",
+      "agreedRate": "Agreed rate",
+      "expectedGross": "Expected gross",
+      "paymentDue": "Payment due",
+      "paymentStatus": "Payment status",
+      "received": "Received",
+      "difference": "DIFFERENCE"
+    },
+    "supportingRecords": {
+      "title": "Supporting Records",
+      "none": "No evidence attached."
+    },
+    "disclaimer": "This does not automatically turn this report into conclusive proof in a legal dispute — authenticity, contract, and evidentiary rules still matter — but it creates contemporaneous documentation far better than reconstructing a route months later.",
+    "downloadDocx": "Download .docx",
+    "errors": {
+      "loadFailed": "Failed to load report",
+      "downloadFailed": "Failed to download",
+      "proFeature": "Formatted .docx export is a ShiftProof Pro feature. The JSON report stays free."
+    }
+  },
+  "ledger": {
+    "title": "Payment Ledger",
+    "outstanding": "OUTSTANDING",
+    "none": "No pending payments. All caught up.",
+    "expected": "Expected",
+    "outstandingRow": "Outstanding"
+  },
+  "account": {
+    "title": "Profile",
+    "emailUnverified": "Email not verified yet",
+    "plan": "Plan",
+    "free": "FREE",
+    "planDescription": "ShiftProof is free, no limits, while we validate the product — Work Report, CSV, Ledger, .docx export and evidence stay open to everyone.",
+    "dataTitle": "Your data, no lock-in",
+    "exportCsv": "Export sessions (.csv)",
+    "logout": "Log out",
+    "errors": {
+      "exportFailed": "Failed to export"
+    }
+  }
+}
