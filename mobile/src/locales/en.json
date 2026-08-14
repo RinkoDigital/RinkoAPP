@@ -1,6 +1,7 @@
 {
   "common": {
-    "failedToLoad": "Failed to load"
+    "failedToLoad": "Failed to load",
+    "loading": "Loading…"
   },
   "nav": {
     "home": "Home",
@@ -33,7 +34,9 @@
     "outstandingEarnings": "OUTSTANDING EARNINGS",
     "viewPaymentLedger": "View payment ledger →",
     "recentSessions": "Recent sessions",
-    "noSessionsYet": "No work sessions yet. Tap + to start."
+    "noSessionsYet": "No work sessions yet. Tap + to start.",
+    "sessionMeta": "{{date}} · {{completed}}/{{assigned}} packages",
+    "startSessionAria": "Start work session"
   },
   "startSession": {
     "title": "Start Work Session",

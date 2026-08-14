@@ -2,6 +2,7 @@ import { Directory, File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { API_BASE_URL, api } from "../../src/api/client";
 import { useAuth } from "../../src/auth/AuthContext";
 import { AppButton, Card, ErrorBanner, Faint, Screen, Title, TopBar } from "../../src/components/ui";
@@ -10,6 +11,7 @@ import { colors } from "../../src/theme";
 import { useState } from "react";
 
 export default function AccountScreen() {
+  const { t } = useTranslation();
   const { driver, logout } = useAuth();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export default function AccountScreen() {
         await Sharing.shareAsync(file.uri, { mimeType: "text/csv" });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to export");
+      setError(err instanceof Error ? err.message : t("account.errors.exportFailed"));
     } finally {
       setExporting(false);
     }
@@ -44,7 +46,7 @@ export default function AccountScreen() {
   return (
     <Screen>
       <TopBar>
-        <Title>Perfil</Title>
+        <Title>{t("account.title")}</Title>
       </TopBar>
 
       {error && <ErrorBanner message={error} />}
@@ -53,25 +55,22 @@ export default function AccountScreen() {
         <Text style={styles.name}>{driver?.name}</Text>
         <Faint>{driver?.email}</Faint>
         {driver && !driver.email_verified && (
-          <Text style={styles.unverified}>Email ainda não verificado</Text>
+          <Text style={styles.unverified}>{t("account.emailUnverified")}</Text>
         )}
       </Card>
 
       <Card>
         <View style={styles.planHeader}>
-          <Text style={styles.cardTitle}>Plano</Text>
-          <Text style={styles.planPill}>GRÁTIS</Text>
+          <Text style={styles.cardTitle}>{t("account.plan")}</Text>
+          <Text style={styles.planPill}>{t("account.free")}</Text>
         </View>
-        <Faint style={{ marginTop: 4 }}>
-          O ShiftProof está gratuito, sem limites, enquanto validamos o produto — Work Report, CSV,
-          Ledger, exportação em .docx e evidence continuam liberados pra todo mundo.
-        </Faint>
+        <Faint style={{ marginTop: 4 }}>{t("account.planDescription")}</Faint>
       </Card>
 
       <Card>
-        <Text style={styles.cardTitle}>Seus dados, sem lock-in</Text>
+        <Text style={styles.cardTitle}>{t("account.dataTitle")}</Text>
         <AppButton
-          title="Exportar sessões (.csv)"
+          title={t("account.exportCsv")}
           variant="secondary"
           onPress={handleExportCsv}
           loading={exporting}
@@ -79,7 +78,7 @@ export default function AccountScreen() {
         />
       </Card>
 
-      <AppButton title="Sair" variant="danger" onPress={handleLogout} />
+      <AppButton title={t("account.logout")} variant="danger" onPress={handleLogout} />
     </Screen>
   );
 }

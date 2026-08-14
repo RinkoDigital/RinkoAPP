@@ -1,12 +1,14 @@
 import { useEffect } from "react";
 import { Redirect, Tabs } from "expo-router";
 import { Text } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../src/auth/AuthContext";
 import { LoadingScreen } from "../../src/components/ui";
 import { syncPushTokenWithBackend } from "../../src/native/pushNotifications";
 import { colors } from "../../src/theme";
 
 export default function TabsLayout() {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
@@ -32,15 +34,15 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name="index"
-        options={{ title: "Home", tabBarIcon: () => <Text>🏠</Text> }}
+        options={{ title: t("nav.home"), tabBarIcon: () => <Text>🏠</Text> }}
       />
       <Tabs.Screen
         name="ledger"
-        options={{ title: "Ledger", tabBarIcon: () => <Text>📒</Text> }}
+        options={{ title: t("nav.ledger"), tabBarIcon: () => <Text>📒</Text> }}
       />
       <Tabs.Screen
         name="account"
-        options={{ title: "Account", tabBarIcon: () => <Text>👤</Text> }}
+        options={{ title: t("nav.account"), tabBarIcon: () => <Text>👤</Text> }}
       />
     </Tabs>
   );

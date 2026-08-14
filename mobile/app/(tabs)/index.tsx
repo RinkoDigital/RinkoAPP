@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ActivityIndicator } from "react-native";
+import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../../src/api/client";
 import { formatCents, formatDate } from "../../src/api/format";
 import type { LedgerSummary, WorkSession } from "../../src/api/types";
@@ -11,6 +12,7 @@ import { Card, EmptyState, ErrorBanner, Faint, Mono, Screen, TopBar } from "../.
 import { colors } from "../../src/theme";
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const { driver } = useAuth();
   const router = useRouter();
   const [ledger, setLedger] = useState<LedgerSummary | null>(null);
@@ -24,8 +26,8 @@ export default function HomeScreen() {
           setLedger(ledgerData);
           setSessions(sessionsData);
         })
-        .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load"));
-    }, [])
+        .catch((err) => setError(err instanceof ApiError ? err.message : t("common.failedToLoad")));
+    }, [t])
   );
 
   const firstName = driver?.name.split(" ")[0] ?? "";
@@ -34,28 +36,28 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <Screen>
         <TopBar>
-          <Text style={styles.greeting}>Boa tarde, {firstName}</Text>
+          <Text style={styles.greeting}>{t("home.greeting", { name: firstName })}</Text>
         </TopBar>
 
         {error && <ErrorBanner message={error} />}
 
         <Card style={styles.ledgerCard}>
-          <Faint>OUTSTANDING EARNINGS</Faint>
+          <Faint>{t("home.outstandingEarnings")}</Faint>
           {ledger ? (
             <Mono style={styles.ledgerAmount}>{formatCents(ledger.outstanding_total_cents)}</Mono>
           ) : (
             <ActivityIndicator color={colors.violetGlow} style={{ marginVertical: 8 }} />
           )}
           <Pressable onPress={() => router.push("/(tabs)/ledger")}>
-            <Text style={styles.ledgerLink}>Ver payment ledger →</Text>
+            <Text style={styles.ledgerLink}>{t("home.viewPaymentLedger")}</Text>
           </Pressable>
         </Card>
 
-        <Text style={styles.sectionTitle}>Sessões recentes</Text>
+        <Text style={styles.sectionTitle}>{t("home.recentSessions")}</Text>
 
         {sessions === null && <ActivityIndicator color={colors.violetGlow} />}
         {sessions !== null && sessions.length === 0 && (
-          <EmptyState>Nenhuma work session ainda. Toque em + para começar.</EmptyState>
+          <EmptyState>{t("home.noSessionsYet")}</EmptyState>
         )}
         {sessions?.map((s) => (
           <Pressable key={s.id} onPress={() => router.push(`/sessions/${s.id}`)}>
@@ -68,7 +70,11 @@ export default function HomeScreen() {
                 <StatusPill status={s.status === "open" ? "pending" : s.payment_status} />
               </View>
               <Faint style={{ marginTop: 4 }}>
-                {formatDate(s.service_date)} · {s.packages_completed}/{s.packages_assigned} pacotes
+                {t("home.sessionMeta", {
+                  date: formatDate(s.service_date),
+                  completed: s.packages_completed,
+                  assigned: s.packages_assigned,
+                })}
               </Faint>
               <Mono style={{ marginTop: 6 }}>{formatCents(s.expected_gross_cents)}</Mono>
             </Card>
@@ -76,7 +82,11 @@ export default function HomeScreen() {
         ))}
       </Screen>
 
-      <Pressable style={styles.fab} onPress={() => router.push("/sessions/new")}>
+      <Pressable
+        style={styles.fab}
+        onPress={() => router.push("/sessions/new")}
+        accessibilityLabel={t("home.startSessionAria")}
+      >
         <Text style={styles.fabText}>+</Text>
       </Pressable>
     </View>

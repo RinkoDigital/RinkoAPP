@@ -1,6 +1,7 @@
 {
   "common": {
-    "failedToLoad": "Falha ao carregar"
+    "failedToLoad": "Falha ao carregar",
+    "loading": "Carregando…"
   },
   "nav": {
     "home": "Início",
@@ -33,7 +34,9 @@
     "outstandingEarnings": "GANHOS PENDENTES",
     "viewPaymentLedger": "Ver payment ledger →",
     "recentSessions": "Sessões recentes",
-    "noSessionsYet": "Nenhuma work session ainda. Toque em + para começar."
+    "noSessionsYet": "Nenhuma work session ainda. Toque em + para começar.",
+    "sessionMeta": "{{date}} · {{completed}}/{{assigned}} pacotes",
+    "startSessionAria": "Iniciar work session"
   },
   "startSession": {
     "title": "Iniciar Work Session",

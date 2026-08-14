@@ -1,12 +1,7 @@
 import { StyleSheet, Text } from "react-native";
+import { useTranslation } from "react-i18next";
 import { colors, radii } from "../theme";
 import type { PaymentStatus } from "../api/types";
-
-const LABELS: Record<PaymentStatus, string> = {
-  pending: "Pending",
-  partial: "Partial",
-  received: "Received",
-};
 
 const COLOR_MAP: Record<PaymentStatus, { bg: string; fg: string }> = {
   pending: { bg: colors.pendingBg, fg: colors.pending },
@@ -15,9 +10,10 @@ const COLOR_MAP: Record<PaymentStatus, { bg: string; fg: string }> = {
 };
 
 export function StatusPill({ status }: { status: PaymentStatus }) {
+  const { t } = useTranslation();
   const { bg, fg } = COLOR_MAP[status];
   return (
-    <Text style={[styles.pill, { backgroundColor: bg, color: fg }]}>{LABELS[status]}</Text>
+    <Text style={[styles.pill, { backgroundColor: bg, color: fg }]}>{t(`statusPill.${status}`)}</Text>
   );
 }
 

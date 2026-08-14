@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Redirect, useRouter } from "expo-router";
 import * as AppleAuthentication from "expo-apple-authentication";
+import { useTranslation } from "react-i18next";
 import { ApiError } from "../src/api/client";
 import { useAuth } from "../src/auth/AuthContext";
 import { AppButton, ErrorBanner, Field, LoadingScreen, Screen } from "../src/components/ui";
@@ -12,6 +13,7 @@ import { colors } from "../src/theme";
 const authLogo = require("../assets/auth-logo.png");
 
 export default function AuthScreen() {
+  const { t } = useTranslation();
   const { isAuthenticated, isLoading: authLoading, login, signup, loginWithGoogle, loginWithApple } =
     useAuth();
   const router = useRouter();
@@ -39,7 +41,7 @@ export default function AuthScreen() {
       }
       router.replace("/");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Something went wrong");
+      setError(err instanceof ApiError ? err.message : t("auth.errors.somethingWentWrong"));
     } finally {
       setLoading(false);
     }
@@ -54,7 +56,7 @@ export default function AuthScreen() {
       await loginWithGoogle(idToken);
       router.replace("/");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to sign in with Google");
+      setError(err instanceof ApiError ? err.message : t("auth.errors.googleSignInFailed"));
     } finally {
       setOauthLoading(false);
     }
@@ -69,7 +71,7 @@ export default function AuthScreen() {
       await loginWithApple(result.identityToken, result.fullName);
       router.replace("/");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to sign in with Apple");
+      setError(err instanceof ApiError ? err.message : t("auth.errors.appleSignInFailed"));
     } finally {
       setOauthLoading(false);
     }
@@ -79,18 +81,18 @@ export default function AuthScreen() {
     <Screen>
       <View style={styles.hero}>
         <Image source={authLogo} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.tagline}>Your routes. Your work. Your records.</Text>
+        <Text style={styles.tagline}>{t("auth.tagline")}</Text>
       </View>
 
       <View style={styles.card}>
         <View style={styles.tabs}>
           <Pressable onPress={() => setMode("login")} style={styles.tabBtn}>
-            <Text style={[styles.tabText, mode === "login" && styles.tabTextActive]}>Entrar</Text>
+            <Text style={[styles.tabText, mode === "login" && styles.tabTextActive]}>{t("auth.login")}</Text>
             {mode === "login" && <View style={styles.tabUnderline} />}
           </Pressable>
           <Pressable onPress={() => setMode("signup")} style={styles.tabBtn}>
             <Text style={[styles.tabText, mode === "signup" && styles.tabTextActive]}>
-              Criar conta
+              {t("auth.signup")}
             </Text>
             {mode === "signup" && <View style={styles.tabUnderline} />}
           </Pressable>
@@ -99,19 +101,19 @@ export default function AuthScreen() {
         {error && <ErrorBanner message={error} />}
 
         {mode === "signup" && (
-          <Field label="Nome" value={name} onChangeText={setName} autoCapitalize="words" />
+          <Field label={t("auth.name")} value={name} onChangeText={setName} autoCapitalize="words" />
         )}
         <Field
-          label="Email"
+          label={t("auth.email")}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
         />
-        <Field label="Senha" value={password} onChangeText={setPassword} secureTextEntry />
+        <Field label={t("auth.password")} value={password} onChangeText={setPassword} secureTextEntry />
 
         <AppButton
-          title={mode === "login" ? "Entrar" : "Criar conta"}
+          title={mode === "login" ? t("auth.login") : t("auth.signup")}
           onPress={handleSubmit}
           loading={loading}
         />
@@ -120,13 +122,13 @@ export default function AuthScreen() {
           <>
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>ou continue com</Text>
+              <Text style={styles.dividerText}>{t("auth.orContinueWith")}</Text>
               <View style={styles.dividerLine} />
             </View>
 
             {isGoogleSignInConfigured && (
               <AppButton
-                title="Continuar com Google"
+                title={t("auth.continueWithGoogle")}
                 variant="secondary"
                 onPress={handleGoogleSignIn}
                 loading={oauthLoading}
@@ -150,7 +152,7 @@ export default function AuthScreen() {
           onPress={() => Linking.openURL("https://shiftprooff.netlify.app/privacy.html")}
           style={{ alignItems: "center", marginTop: 18 }}
         >
-          <Text style={styles.privacyLink}>Política de Privacidade</Text>
+          <Text style={styles.privacyLink}>{t("auth.privacyPolicy")}</Text>
         </Pressable>
       </View>
     </Screen>
