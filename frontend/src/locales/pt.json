@@ -1,0 +1,193 @@
+{
+  "common": {
+    "failedToLoad": "Falha ao carregar",
+    "loading": "Carregando…",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar"
+  },
+  "nav": {
+    "home": "Início",
+    "ledger": "Pagamentos",
+    "account": "Conta"
+  },
+  "statusPill": {
+    "pending": "Pendente",
+    "partial": "Parcial",
+    "received": "Recebido"
+  },
+  "auth": {
+    "tagline": "Suas rotas. Seu trabalho. Seus registros.",
+    "login": "Entrar",
+    "signup": "Criar conta",
+    "name": "Nome",
+    "email": "Email",
+    "password": "Senha",
+    "orContinueWith": "ou continue com",
+    "privacyPolicy": "Política de Privacidade",
+    "errors": {
+      "googleSignInFailed": "Falha ao entrar com o Google",
+      "somethingWentWrong": "Algo deu errado"
+    }
+  },
+  "home": {
+    "greeting": "Boa tarde, {{name}}",
+    "outstandingEarnings": "GANHOS PENDENTES",
+    "viewPaymentLedger": "Ver payment ledger →",
+    "recentSessions": "Sessões recentes",
+    "noSessionsYet": "Nenhuma work session ainda. Toque em + para começar.",
+    "sessionMeta": "{{date}} · {{completed}}/{{assigned}} pacotes",
+    "startSessionAria": "Iniciar work session"
+  },
+  "startSession": {
+    "title": "Iniciar Work Session",
+    "carrierLabel": "Carrier / Contractor",
+    "newCarrierOption": "+ Nova contratante",
+    "newCarrierNameLabel": "Nome da contratante",
+    "newCarrierPlaceholder": "UniUni, GOFO, OnTrac…",
+    "routeIdLabel": "Route ID",
+    "dateLabel": "Data",
+    "packagesAssignedLabel": "Packages assigned",
+    "rateLabel": "Agreed rate ($/pacote)",
+    "ratePlaceholder": "1.80",
+    "submit": "Iniciar Work Session",
+    "errors": {
+      "carrierNameRequired": "Informe o nome da contratante"
+    }
+  },
+  "sessionDetail": {
+    "back": "← Voltar",
+    "packagesAssigned": "Packages assigned",
+    "packagesCompleted": "Packages completed",
+    "agreedRate": "Agreed rate",
+    "expectedGross": "Expected gross",
+    "outstanding": "Outstanding",
+    "closeSession": {
+      "title": "Encerrar sessão",
+      "exceptions": "Exceptions",
+      "mileage": "Mileage",
+      "submit": "Encerrar e gerar Work Report"
+    },
+    "recordPayment": {
+      "title": "Registrar pagamento recebido",
+      "receivedLabel": "Recebido ($)",
+      "submit": "Registrar pagamento"
+    },
+    "packages": {
+      "title": "Pacotes",
+      "refreshStatus": "↻ Atualizar status",
+      "none": "Nenhum pacote registrado ainda.",
+      "outcome": {
+        "pending": "Pendente",
+        "delivered": "Entregue",
+        "returned": "Devolvido"
+      },
+      "confirmOutcome": "Confirmar entrega/devolução",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "courierLabel": "Transportadora",
+      "courierAutoDetect": "Detectar automaticamente",
+      "courierAuto": "Auto",
+      "importCodesLabel": "Códigos de rastreio (um por linha)",
+      "importPlaceholder": "LV209031969CN\nLV209031970CN",
+      "importSubmit": "Importar pacotes",
+      "skippedDuplicates": "{{count}} código(s) já existiam nessa sessão e foram ignorados.",
+      "errors": {
+        "refreshFailed": "Failed to refresh carrier status",
+        "resolveFailed": "Failed to resolve package",
+        "importFailed": "Failed to import packages"
+      }
+    },
+    "evidence": {
+      "title": "Evidências",
+      "none": "Nenhuma evidência anexada ainda.",
+      "typeLabel": "Tipo",
+      "fileLabel": "Arquivo",
+      "camera": "Câmera",
+      "gallery": "Galeria",
+      "pdf": "PDF",
+      "submit": "Anexar evidência",
+      "kinds": {
+        "routeScreenshot": "Route screenshot",
+        "rateScreenshot": "Rate screenshot",
+        "gpsSession": "GPS session",
+        "completionRecord": "Completion record",
+        "settlementStatement": "Settlement statement",
+        "other": "Other"
+      },
+      "permissionDeniedCamera": "Permissão de câmera negada.",
+      "permissionDeniedGallery": "Permissão de galeria negada.",
+      "errors": {
+        "uploadFailed": "Failed to upload evidence"
+      }
+    },
+    "viewWorkReport": "Ver Work Report",
+    "errors": {
+      "closeFailed": "Failed to close session",
+      "paymentFailed": "Failed to record payment"
+    }
+  },
+  "returnReasons": {
+    "refused": "Recusado",
+    "wrongAddress": "Endereço errado",
+    "damaged": "Danificado",
+    "undeliverable": "Não entregável",
+    "other": "Outro"
+  },
+  "workReport": {
+    "back": "← Voltar",
+    "title": "SHIFTPROOF — INDEPENDENT WORK RECORD",
+    "driver": "Driver",
+    "carrier": "Carrier / Contractor",
+    "serviceDate": "Service date",
+    "routeId": "Route ID",
+    "workRecord": {
+      "title": "Work Record",
+      "routeStarted": "Route started",
+      "routeCompleted": "Route completed",
+      "packagesAssigned": "Packages assigned",
+      "completed": "Completed",
+      "exceptions": "Exceptions",
+      "distance": "Distance"
+    },
+    "compensation": {
+      "title": "Compensation Record",
+      "agreedRate": "Agreed rate",
+      "expectedGross": "Expected gross",
+      "paymentDue": "Payment due",
+      "paymentStatus": "Payment status",
+      "received": "Received",
+      "difference": "DIFFERENCE"
+    },
+    "supportingRecords": {
+      "title": "Supporting Records",
+      "none": "Nenhuma evidência anexada."
+    },
+    "disclaimer": "Isso não transforma automaticamente este relatório em prova conclusiva numa disputa legal — autenticidade, contrato e regras probatórias ainda importam — mas cria documentação contemporânea muito melhor do que reconstruir uma rota meses depois.",
+    "downloadDocx": "Baixar .docx",
+    "errors": {
+      "loadFailed": "Failed to load report",
+      "downloadFailed": "Failed to download",
+      "proFeature": "Exportação .docx é um recurso ShiftProof Pro. O JSON do relatório continua grátis."
+    }
+  },
+  "ledger": {
+    "title": "Payment Ledger",
+    "outstanding": "OUTSTANDING",
+    "none": "Nenhum pagamento pendente. Tudo em dia.",
+    "expected": "Expected",
+    "outstandingRow": "Outstanding"
+  },
+  "account": {
+    "title": "Perfil",
+    "emailUnverified": "Email ainda não verificado",
+    "plan": "Plano",
+    "free": "Grátis",
+    "planDescription": "O ShiftProof está gratuito, sem limites, enquanto validamos o produto — Work Report, CSV, Ledger, exportação em .docx e evidence continuam liberados pra todo mundo.",
+    "dataTitle": "Seus dados, sem lock-in",
+    "exportCsv": "Exportar sessões (.csv)",
+    "logout": "Sair",
+    "errors": {
+      "exportFailed": "Failed to export"
+    }
+  }
+}
