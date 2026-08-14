@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Directory, File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { API_BASE_URL, api, ApiError } from "../../../src/api/client";
 import { formatCents, formatDate, formatTime } from "../../../src/api/format";
 import type { WorkReport } from "../../../src/api/types";
@@ -18,6 +19,7 @@ import {
 import { colors } from "../../../src/theme";
 
 export default function WorkReportScreen() {
+  const { t } = useTranslation();
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const router = useRouter();
   const [report, setReport] = useState<WorkReport | null>(null);
@@ -30,8 +32,8 @@ export default function WorkReportScreen() {
     api
       .get<WorkReport>(`/sessions/${sessionId}/work-report`)
       .then(setReport)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load report"));
-  }, [sessionId]);
+      .catch((err) => setError(err instanceof ApiError ? err.message : t("workReport.errors.loadFailed")));
+  }, [sessionId, t]);
 
   async function handleDownloadDocx() {
     if (!sessionId) return;
@@ -48,12 +50,8 @@ export default function WorkReportScreen() {
         await Sharing.shareAsync(file.uri);
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to download";
-      setDownloadError(
-        message.includes("402")
-          ? "Exportação .docx é um recurso ShiftProof Pro. O JSON do relatório continua grátis."
-          : message
-      );
+      const message = err instanceof Error ? err.message : t("workReport.errors.downloadFailed");
+      setDownloadError(message.includes("402") ? t("workReport.errors.proFeature") : message);
     } finally {
       setDownloading(false);
     }
@@ -81,42 +79,42 @@ export default function WorkReportScreen() {
     <Screen>
       <TopBar>
         <Pressable onPress={() => router.back()}>
-          <Text style={styles.backLink}>← Voltar</Text>
+          <Text style={styles.backLink}>{t("workReport.back")}</Text>
         </Pressable>
       </TopBar>
 
       <Card>
-        <Text style={styles.reportTitle}>SHIFTPROOF — INDEPENDENT WORK RECORD</Text>
+        <Text style={styles.reportTitle}>{t("workReport.title")}</Text>
         <Faint style={{ marginTop: 4 }}>{report.report_number}</Faint>
 
-        <Row label="Driver" value={report.driver_name} />
-        <Row label="Carrier / Contractor" value={report.carrier_name} />
-        <Row label="Service date" value={formatDate(report.service_date)} />
-        {report.route_id && <Row label="Route ID" value={report.route_id} />}
+        <Row label={t("workReport.driver")} value={report.driver_name} />
+        <Row label={t("workReport.carrier")} value={report.carrier_name} />
+        <Row label={t("workReport.serviceDate")} value={formatDate(report.service_date)} />
+        {report.route_id && <Row label={t("workReport.routeId")} value={report.route_id} />}
       </Card>
 
       <Card>
-        <Text style={styles.cardTitle}>Work Record</Text>
-        <Row label="Route started" value={formatTime(report.work_record.route_started)} />
-        <Row label="Route completed" value={formatTime(report.work_record.route_completed)} />
-        <Row label="Packages assigned" value={report.work_record.packages_assigned} />
-        <Row label="Completed" value={report.work_record.packages_completed} />
-        <Row label="Exceptions" value={report.work_record.exceptions} />
-        <Row label="Distance" value={`${report.work_record.mileage ?? "—"} mi`} />
+        <Text style={styles.cardTitle}>{t("workReport.workRecord.title")}</Text>
+        <Row label={t("workReport.workRecord.routeStarted")} value={formatTime(report.work_record.route_started)} />
+        <Row label={t("workReport.workRecord.routeCompleted")} value={formatTime(report.work_record.route_completed)} />
+        <Row label={t("workReport.workRecord.packagesAssigned")} value={report.work_record.packages_assigned} />
+        <Row label={t("workReport.workRecord.completed")} value={report.work_record.packages_completed} />
+        <Row label={t("workReport.workRecord.exceptions")} value={report.work_record.exceptions} />
+        <Row label={t("workReport.workRecord.distance")} value={`${report.work_record.mileage ?? "—"} mi`} />
       </Card>
 
       <Card>
-        <Text style={styles.cardTitle}>Compensation Record</Text>
-        <Row label="Agreed rate" value={`${formatCents(report.compensation.agreed_rate_cents)}/pkg`} />
-        <Row label="Expected gross" value={formatCents(report.compensation.expected_gross_cents)} />
-        <Row label="Payment due" value={formatDate(report.compensation.payment_due_date)} />
-        <Row label="Payment status" value={report.compensation.payment_status.toUpperCase()} />
+        <Text style={styles.cardTitle}>{t("workReport.compensation.title")}</Text>
+        <Row label={t("workReport.compensation.agreedRate")} value={`${formatCents(report.compensation.agreed_rate_cents)}/pkg`} />
+        <Row label={t("workReport.compensation.expectedGross")} value={formatCents(report.compensation.expected_gross_cents)} />
+        <Row label={t("workReport.compensation.paymentDue")} value={formatDate(report.compensation.payment_due_date)} />
+        <Row label={t("workReport.compensation.paymentStatus")} value={report.compensation.payment_status.toUpperCase()} />
         {report.compensation.payment_received_cents !== null && (
-          <Row label="Received" value={formatCents(report.compensation.payment_received_cents)} />
+          <Row label={t("workReport.compensation.received")} value={formatCents(report.compensation.payment_received_cents)} />
         )}
         {diff !== null && diff !== undefined && (
           <Row
-            label="DIFFERENCE"
+            label={t("workReport.compensation.difference")}
             value={
               <Text style={{ color: diff < 0 ? colors.bad : colors.good, fontFamily: "monospace" }}>
                 {formatCents(diff)}
@@ -127,8 +125,8 @@ export default function WorkReportScreen() {
       </Card>
 
       <Card>
-        <Text style={styles.cardTitle}>Supporting Records</Text>
-        {report.supporting_records.length === 0 && <Faint>Nenhuma evidência anexada.</Faint>}
+        <Text style={styles.cardTitle}>{t("workReport.supportingRecords.title")}</Text>
+        {report.supporting_records.length === 0 && <Faint>{t("workReport.supportingRecords.none")}</Faint>}
         {report.supporting_records.map((ev) => (
           <Text key={ev.id} style={styles.supportingRecord}>
             ✓ {ev.kind.replace(/_/g, " ")}
@@ -137,16 +135,12 @@ export default function WorkReportScreen() {
       </Card>
 
       {diff !== null && diff !== undefined && diff !== 0 && (
-        <Text style={styles.disclaimer}>
-          Isso não transforma automaticamente este relatório em prova conclusiva numa disputa
-          legal — autenticidade, contrato e regras probatórias ainda importam — mas cria
-          documentação contemporânea muito melhor do que reconstruir uma rota meses depois.
-        </Text>
+        <Text style={styles.disclaimer}>{t("workReport.disclaimer")}</Text>
       )}
 
       {downloadError && <ErrorBanner message={downloadError} />}
       <AppButton
-        title="Baixar .docx"
+        title={t("workReport.downloadDocx")}
         variant="secondary"
         onPress={handleDownloadDocx}
         loading={downloading}

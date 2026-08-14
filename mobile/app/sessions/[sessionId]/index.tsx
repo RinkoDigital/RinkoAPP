@@ -3,6 +3,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../../../src/api/client";
 import { formatCents, formatDate } from "../../../src/api/format";
 import type {
@@ -30,24 +31,8 @@ import {
 import { getCurrentLocation, type Coords } from "../../../src/native/locationStamp";
 import { colors } from "../../../src/theme";
 
-const EVIDENCE_KINDS: { value: EvidenceKind; label: string }[] = [
-  { value: "route_screenshot", label: "Route screenshot" },
-  { value: "rate_screenshot", label: "Rate screenshot" },
-  { value: "gps_session", label: "GPS session" },
-  { value: "completion_record", label: "Completion record" },
-  { value: "settlement_statement", label: "Settlement statement" },
-  { value: "other", label: "Other" },
-];
-
-const RETURN_REASONS: { value: ReturnReason; label: string }[] = [
-  { value: "refused", label: "Recusado" },
-  { value: "wrong_address", label: "Endereço errado" },
-  { value: "damaged", label: "Danificado" },
-  { value: "undeliverable", label: "Não entregável" },
-  { value: "other", label: "Outro" },
-];
-
 export default function SessionDetailScreen() {
+  const { t } = useTranslation();
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const router = useRouter();
   const [session, setSession] = useState<WorkSession | null>(null);
@@ -74,12 +59,29 @@ export default function SessionDetailScreen() {
   const [resolveOutcome, setResolveOutcome] = useState<"delivered" | "returned">("delivered");
   const [resolveReturnReason, setResolveReturnReason] = useState<ReturnReason>("wrong_address");
 
+  const EVIDENCE_KINDS: { value: EvidenceKind; label: string }[] = [
+    { value: "route_screenshot", label: t("sessionDetail.evidence.kinds.routeScreenshot") },
+    { value: "rate_screenshot", label: t("sessionDetail.evidence.kinds.rateScreenshot") },
+    { value: "gps_session", label: t("sessionDetail.evidence.kinds.gpsSession") },
+    { value: "completion_record", label: t("sessionDetail.evidence.kinds.completionRecord") },
+    { value: "settlement_statement", label: t("sessionDetail.evidence.kinds.settlementStatement") },
+    { value: "other", label: t("sessionDetail.evidence.kinds.other") },
+  ];
+
+  const RETURN_REASONS: { value: ReturnReason; label: string }[] = [
+    { value: "refused", label: t("returnReasons.refused") },
+    { value: "wrong_address", label: t("returnReasons.wrongAddress") },
+    { value: "damaged", label: t("returnReasons.damaged") },
+    { value: "undeliverable", label: t("returnReasons.undeliverable") },
+    { value: "other", label: t("returnReasons.other") },
+  ];
+
   const load = useCallback(() => {
     if (!sessionId) return;
     api
       .get<WorkSession>(`/sessions/${sessionId}`)
       .then(setSession)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load"));
+      .catch((err) => setError(err instanceof ApiError ? err.message : t("common.failedToLoad")));
     api
       .get<Evidence[]>(`/sessions/${sessionId}/evidence`)
       .then(setEvidence)
@@ -88,7 +90,7 @@ export default function SessionDetailScreen() {
       .get<Package[]>(`/sessions/${sessionId}/packages`)
       .then(setPackages)
       .catch(() => {});
-  }, [sessionId]);
+  }, [sessionId, t]);
 
   useFocusEffect(load);
 
@@ -103,7 +105,7 @@ export default function SessionDetailScreen() {
       });
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to close session");
+      setError(err instanceof ApiError ? err.message : t("sessionDetail.errors.closeFailed"));
     } finally {
       setClosing(false);
     }
@@ -120,7 +122,7 @@ export default function SessionDetailScreen() {
       setPaymentReceived("");
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to record payment");
+      setError(err instanceof ApiError ? err.message : t("sessionDetail.errors.paymentFailed"));
     } finally {
       setRecordingPayment(false);
     }
@@ -143,11 +145,11 @@ export default function SessionDetailScreen() {
       );
       setImportText("");
       if (result.skipped_duplicates.length > 0) {
-        setError(`${result.skipped_duplicates.length} código(s) já existiam nessa sessão e foram ignorados.`);
+        setError(t("sessionDetail.packages.skippedDuplicates", { count: result.skipped_duplicates.length }));
       }
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to import packages");
+      setError(err instanceof ApiError ? err.message : t("sessionDetail.packages.errors.importFailed"));
     } finally {
       setImporting(false);
     }
@@ -161,7 +163,7 @@ export default function SessionDetailScreen() {
       await api.post(`/sessions/${sessionId}/packages/refresh-status`, {});
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to refresh carrier status");
+      setError(err instanceof ApiError ? err.message : t("sessionDetail.packages.errors.refreshFailed"));
     } finally {
       setRefreshingStatus(false);
     }
@@ -178,7 +180,7 @@ export default function SessionDetailScreen() {
       setResolvingId(null);
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to resolve package");
+      setError(err instanceof ApiError ? err.message : t("sessionDetail.packages.errors.resolveFailed"));
     }
   }
 
@@ -211,7 +213,7 @@ export default function SessionDetailScreen() {
       await api.postForm<Evidence>(`/sessions/${sessionId}/evidence`, form);
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to upload evidence");
+      setError(err instanceof ApiError ? err.message : t("sessionDetail.evidence.errors.uploadFailed"));
     } finally {
       setUploadingEvidence(false);
     }
@@ -222,14 +224,14 @@ export default function SessionDetailScreen() {
     if (source === "camera") {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== "granted") {
-        setError("Permissão de câmera negada.");
+        setError(t("sessionDetail.evidence.permissionDeniedCamera"));
         return;
       }
       result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.9 });
     } else {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        setError("Permissão de galeria negada.");
+        setError(t("sessionDetail.evidence.permissionDeniedGallery"));
         return;
       }
       result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.9 });
@@ -281,7 +283,7 @@ export default function SessionDetailScreen() {
       <LocationStamper ref={stamperRef} />
       <TopBar>
         <Pressable onPress={() => router.back()}>
-          <Text style={styles.backLink}>← Voltar</Text>
+          <Text style={styles.backLink}>{t("sessionDetail.back")}</Text>
         </Pressable>
       </TopBar>
 
@@ -297,42 +299,47 @@ export default function SessionDetailScreen() {
         </View>
         <Faint>{formatDate(session.service_date)}</Faint>
 
-        <Row label="Packages assigned" value={session.packages_assigned} />
-        <Row label="Packages completed" value={session.packages_completed} />
-        <Row label="Agreed rate" value={`${formatCents(session.agreed_rate_cents)}/pkg`} />
+        <Row label={t("sessionDetail.packagesAssigned")} value={session.packages_assigned} />
+        <Row label={t("sessionDetail.packagesCompleted")} value={session.packages_completed} />
+        <Row label={t("sessionDetail.agreedRate")} value={`${formatCents(session.agreed_rate_cents)}/pkg`} />
         {session.expected_gross_cents !== null && (
-          <Row label="Expected gross" value={formatCents(session.expected_gross_cents)} />
+          <Row label={t("sessionDetail.expectedGross")} value={formatCents(session.expected_gross_cents)} />
         )}
         {session.status === "closed" && (
-          <Row label="Outstanding" value={formatCents(session.outstanding_cents)} />
+          <Row label={t("sessionDetail.outstanding")} value={formatCents(session.outstanding_cents)} />
         )}
       </Card>
 
       {session.status === "open" && (
         <Card>
-          <Text style={styles.cardTitle}>Encerrar sessão</Text>
+          <Text style={styles.cardTitle}>{t("sessionDetail.closeSession.title")}</Text>
           <Field
-            label="Exceptions"
+            label={t("sessionDetail.closeSession.exceptions")}
             value={exceptionsCount}
             onChangeText={setExceptionsCount}
             keyboardType="number-pad"
           />
-          <Field label="Mileage" value={mileage} onChangeText={setMileage} keyboardType="decimal-pad" />
-          <AppButton title="Encerrar e gerar Work Report" onPress={handleClose} loading={closing} />
+          <Field
+            label={t("sessionDetail.closeSession.mileage")}
+            value={mileage}
+            onChangeText={setMileage}
+            keyboardType="decimal-pad"
+          />
+          <AppButton title={t("sessionDetail.closeSession.submit")} onPress={handleClose} loading={closing} />
         </Card>
       )}
 
       {session.status === "closed" && session.payment_status !== "received" && (
         <Card>
-          <Text style={styles.cardTitle}>Registrar pagamento recebido</Text>
+          <Text style={styles.cardTitle}>{t("sessionDetail.recordPayment.title")}</Text>
           <Field
-            label="Recebido ($)"
+            label={t("sessionDetail.recordPayment.receivedLabel")}
             value={paymentReceived}
             onChangeText={setPaymentReceived}
             keyboardType="decimal-pad"
           />
           <AppButton
-            title="Registrar pagamento"
+            title={t("sessionDetail.recordPayment.submit")}
             onPress={handleRecordPayment}
             loading={recordingPayment}
           />
@@ -341,18 +348,18 @@ export default function SessionDetailScreen() {
 
       <Card>
         <View style={styles.rowBetween}>
-          <Text style={styles.cardTitle}>Pacotes</Text>
+          <Text style={styles.cardTitle}>{t("sessionDetail.packages.title")}</Text>
           {packages.some((p) => p.source !== "manual") && (
             <Pressable onPress={handleRefreshStatus} disabled={refreshingStatus}>
               <Text style={styles.refreshLink}>
-                {refreshingStatus ? "..." : "↻ Atualizar status"}
+                {refreshingStatus ? t("sessionDetail.packages.refreshing") : t("sessionDetail.packages.refreshStatus")}
               </Text>
             </Pressable>
           )}
         </View>
 
         <View style={{ marginBottom: 14 }}>
-          {packages.length === 0 && <Faint>Nenhum pacote registrado ainda.</Faint>}
+          {packages.length === 0 && <Faint>{t("sessionDetail.packages.none")}</Faint>}
           {packages.map((pkg) => (
             <View key={pkg.id} style={styles.packageRow}>
               <View style={styles.rowBetween}>
@@ -373,7 +380,11 @@ export default function SessionDetailScreen() {
                       pkg.outcome === "returned" && { color: colors.bad },
                     ]}
                   >
-                    {pkg.outcome === null ? "PENDENTE" : pkg.outcome === "delivered" ? "ENTREGUE" : "DEVOLVIDO"}
+                    {pkg.outcome === null
+                      ? t("sessionDetail.packages.outcome.pending")
+                      : pkg.outcome === "delivered"
+                        ? t("sessionDetail.packages.outcome.delivered")
+                        : t("sessionDetail.packages.outcome.returned")}
                   </Text>
                 </View>
               </View>
@@ -386,7 +397,7 @@ export default function SessionDetailScreen() {
 
               {pkg.outcome === null && resolvingId !== pkg.id && (
                 <Pressable onPress={() => setResolvingId(pkg.id)} style={{ marginTop: 6 }}>
-                  <Text style={styles.refreshLink}>Confirmar entrega/devolução</Text>
+                  <Text style={styles.refreshLink}>{t("sessionDetail.packages.confirmOutcome")}</Text>
                 </Pressable>
               )}
 
@@ -400,7 +411,9 @@ export default function SessionDetailScreen() {
                         style={[styles.chip, resolveOutcome === o && styles.chipActive]}
                       >
                         <Text style={[styles.chipText, resolveOutcome === o && styles.chipTextActive]}>
-                          {o === "delivered" ? "Entregue" : "Devolvido"}
+                          {o === "delivered"
+                            ? t("sessionDetail.packages.outcomeDelivered")
+                            : t("sessionDetail.packages.outcomeReturned")}
                         </Text>
                       </Pressable>
                     ))}
@@ -426,9 +439,13 @@ export default function SessionDetailScreen() {
                     </View>
                   )}
                   <View style={{ flexDirection: "row", gap: 10 }}>
-                    <AppButton title="Confirmar" onPress={() => handleResolve(pkg)} style={{ flex: 1 }} />
                     <AppButton
-                      title="Cancelar"
+                      title={t("sessionDetail.packages.confirm")}
+                      onPress={() => handleResolve(pkg)}
+                      style={{ flex: 1 }}
+                    />
+                    <AppButton
+                      title={t("sessionDetail.packages.cancel")}
                       variant="ghost"
                       onPress={() => setResolvingId(null)}
                       style={{ flex: 1 }}
@@ -440,12 +457,12 @@ export default function SessionDetailScreen() {
           ))}
         </View>
 
-        <Text style={styles.label}>Transportadora</Text>
+        <Text style={styles.label}>{t("sessionDetail.packages.courierLabel")}</Text>
         <View style={styles.chipList}>
           {[
             { value: "uniuni", label: "UniUni" },
             { value: "gofo", label: "GOFO" },
-            { value: "", label: "Auto" },
+            { value: "", label: t("sessionDetail.packages.courierAuto") },
           ].map((c) => (
             <Pressable
               key={c.value}
@@ -459,15 +476,15 @@ export default function SessionDetailScreen() {
           ))}
         </View>
         <Field
-          label="Códigos de rastreio (um por linha)"
+          label={t("sessionDetail.packages.importCodesLabel")}
           value={importText}
           onChangeText={setImportText}
           multiline
           numberOfLines={4}
-          placeholder={"LV209031969CN\nLV209031970CN"}
+          placeholder={t("sessionDetail.packages.importPlaceholder")}
         />
         <AppButton
-          title="Importar pacotes"
+          title={t("sessionDetail.packages.importSubmit")}
           variant="secondary"
           onPress={handleBulkImport}
           loading={importing}
@@ -476,9 +493,9 @@ export default function SessionDetailScreen() {
       </Card>
 
       <Card>
-        <Text style={styles.cardTitle}>Evidence</Text>
+        <Text style={styles.cardTitle}>{t("sessionDetail.evidence.title")}</Text>
         <View style={styles.chipList}>
-          {evidence.length === 0 && <Faint>Nenhuma evidência anexada ainda.</Faint>}
+          {evidence.length === 0 && <Faint>{t("sessionDetail.evidence.none")}</Faint>}
           {evidence.map((ev) => (
             <View key={ev.id} style={styles.evidenceChip}>
               <Text style={styles.evidenceChipText}>
@@ -489,7 +506,7 @@ export default function SessionDetailScreen() {
           ))}
         </View>
 
-        <Text style={styles.label}>Tipo</Text>
+        <Text style={styles.label}>{t("sessionDetail.evidence.typeLabel")}</Text>
         <View style={styles.chipList}>
           {EVIDENCE_KINDS.map((k) => (
             <Pressable
@@ -506,14 +523,14 @@ export default function SessionDetailScreen() {
 
         <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
           <AppButton
-            title="Câmera"
+            title={t("sessionDetail.evidence.camera")}
             variant="secondary"
             onPress={() => pickImage("camera")}
             loading={uploadingEvidence}
             style={{ flex: 1 }}
           />
           <AppButton
-            title="Galeria"
+            title={t("sessionDetail.evidence.gallery")}
             variant="secondary"
             onPress={() => pickImage("library")}
             loading={uploadingEvidence}
@@ -521,7 +538,7 @@ export default function SessionDetailScreen() {
           />
         </View>
         <AppButton
-          title="PDF"
+          title={t("sessionDetail.evidence.pdf")}
           variant="secondary"
           onPress={pickPdf}
           loading={uploadingEvidence}
@@ -530,7 +547,7 @@ export default function SessionDetailScreen() {
 
       {session.status === "closed" && (
         <AppButton
-          title="Ver Work Report"
+          title={t("sessionDetail.viewWorkReport")}
           onPress={() => router.push(`/sessions/${session.id}/report`)}
         />
       )}

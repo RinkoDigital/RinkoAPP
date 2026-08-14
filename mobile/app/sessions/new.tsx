@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../../src/api/client";
 import type { Carrier, WorkSession } from "../../src/api/types";
 import { AppButton, Card, ErrorBanner, Field, Screen, Title, TopBar } from "../../src/components/ui";
@@ -9,6 +10,7 @@ import { colors } from "../../src/theme";
 const NEW_CARRIER = "__new__";
 
 export default function StartSessionScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [carriers, setCarriers] = useState<Carrier[] | null>(null);
   const [carrierId, setCarrierId] = useState("");
@@ -27,8 +29,8 @@ export default function StartSessionScreen() {
         setCarriers(list);
         setCarrierId(list.length > 0 ? list[0].id : NEW_CARRIER);
       })
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load"));
-  }, []);
+      .catch((err) => setError(err instanceof ApiError ? err.message : t("common.failedToLoad")));
+  }, [t]);
 
   async function handleSubmit() {
     setError(null);
@@ -37,7 +39,7 @@ export default function StartSessionScreen() {
       let carrier = carriers?.find((c) => c.id === carrierId) ?? null;
       if (carrierId === NEW_CARRIER || carrier === null) {
         if (!newCarrierName.trim()) {
-          throw new Error("Informe o nome da contratante");
+          throw new Error(t("startSession.errors.carrierNameRequired"));
         }
         carrier = await api.post<Carrier>("/carriers", {
           name: newCarrierName.trim(),
@@ -63,13 +65,13 @@ export default function StartSessionScreen() {
   return (
     <Screen>
       <TopBar>
-        <Title>Iniciar Work Session</Title>
+        <Title>{t("startSession.title")}</Title>
       </TopBar>
 
       {error && <ErrorBanner message={error} />}
 
       <Card>
-        <Text style={styles.label}>Carrier / Contractor</Text>
+        <Text style={styles.label}>{t("startSession.carrierLabel")}</Text>
         <View style={styles.chipList}>
           {carriers?.map((c) => (
             <Pressable
@@ -87,37 +89,37 @@ export default function StartSessionScreen() {
             style={[styles.chip, carrierId === NEW_CARRIER && styles.chipActive]}
           >
             <Text style={[styles.chipText, carrierId === NEW_CARRIER && styles.chipTextActive]}>
-              + Nova contratante
+              {t("startSession.newCarrierOption")}
             </Text>
           </Pressable>
         </View>
 
         {carrierId === NEW_CARRIER && (
           <Field
-            label="Nome da contratante"
-            placeholder="UniUni, GOFO, OnTrac…"
+            label={t("startSession.newCarrierNameLabel")}
+            placeholder={t("startSession.newCarrierPlaceholder")}
             value={newCarrierName}
             onChangeText={setNewCarrierName}
           />
         )}
 
-        <Field label="Route ID" value={routeId} onChangeText={setRouteId} />
-        <Field label="Data (AAAA-MM-DD)" value={serviceDate} onChangeText={setServiceDate} />
+        <Field label={t("startSession.routeIdLabel")} value={routeId} onChangeText={setRouteId} />
+        <Field label={t("startSession.dateLabel")} value={serviceDate} onChangeText={setServiceDate} />
         <Field
-          label="Packages assigned"
+          label={t("startSession.packagesAssignedLabel")}
           value={packagesAssigned}
           onChangeText={setPackagesAssigned}
           keyboardType="number-pad"
         />
         <Field
-          label="Agreed rate ($/pacote)"
-          placeholder="1.80"
+          label={t("startSession.rateLabel")}
+          placeholder={t("startSession.ratePlaceholder")}
           value={rateDollars}
           onChangeText={setRateDollars}
           keyboardType="decimal-pad"
         />
 
-        <AppButton title="Iniciar Work Session" onPress={handleSubmit} loading={loading} />
+        <AppButton title={t("startSession.submit")} onPress={handleSubmit} loading={loading} />
       </Card>
     </Screen>
   );
