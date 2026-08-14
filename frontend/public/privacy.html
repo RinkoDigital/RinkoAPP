@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ShiftProof — Política de Privacidade</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        background: #0a0707;
+        color: #f4ede8;
+        font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 32px 20px 80px;
+      }
+      main {
+        max-width: 680px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin-bottom: 4px;
+      }
+      .updated {
+        color: #7d6963;
+        font-size: 0.85rem;
+        margin-bottom: 32px;
+      }
+      h2 {
+        font-size: 1.1rem;
+        color: #a78bfa;
+        margin-top: 36px;
+        border-bottom: 1px solid #332322;
+        padding-bottom: 8px;
+      }
+      p,
+      li {
+        color: #d8cdc7;
+        font-size: 0.95rem;
+      }
+      ul {
+        padding-left: 20px;
+      }
+      a {
+        color: #a78bfa;
+      }
+      strong {
+        color: #f4ede8;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>ShiftProof — Política de Privacidade</h1>
+      <div class="updated">Última atualização: 14 de agosto de 2026</div>
+
+      <p>
+        O ShiftProof é um app para motoristas independentes registrarem, de forma própria e
+        independente, o trabalho realizado em rotas de entrega — sessões de trabalho, pacotes,
+        pagamentos e evidências. Esta página descreve quais dados coletamos, por quê, e como você
+        pode controlá-los.
+      </p>
+
+      <h2>Quais dados coletamos</h2>
+      <ul>
+        <li><strong>Conta:</strong> nome, email e senha (armazenada como hash, nunca em texto puro) — ou,
+          se você entrar com Google/Apple, o nome e email fornecidos por eles.</li>
+        <li><strong>Registros de trabalho:</strong> contratantes cadastradas, sessões de trabalho (datas,
+          horários, quantidade de pacotes, quilometragem, tarifa acordada), pagamentos recebidos.</li>
+        <li><strong>Pacotes:</strong> códigos de rastreio, status de entrega/devolução, motivo de
+          devolução.</li>
+        <li><strong>Evidências:</strong> fotos e PDFs que você anexa (prints de rota, comprovantes de
+          entrega, etc). Quando você anexa uma foto tirada na hora, o app pode capturar a
+          <strong>localização GPS</strong> do dispositivo naquele momento — isso é opcional, você pode
+          negar a permissão de localização e a foto sobe normalmente, sem esse dado.</li>
+        <li><strong>Token de notificação push:</strong> um identificador do dispositivo (via Expo), usado
+          só para enviar lembretes sobre suas próprias sessões (pagamento a vencer, sessão aberta há
+          muito tempo).</li>
+      </ul>
+
+      <p>Não coletamos dados de pagamento (cartão de crédito, etc) — o app não processa pagamentos.</p>
+
+      <h2>Como usamos esses dados</h2>
+      <p>
+        Só para operar o app: gerar seus relatórios de trabalho, calcular valores esperados x
+        recebidos, mostrar seu histórico de sessões e pacotes. Não vendemos, alugamos ou usamos
+        seus dados para publicidade.
+      </p>
+
+      <h2>Com quem compartilhamos dados</h2>
+      <ul>
+        <li><strong>Google / Apple</strong> — apenas se você optar por entrar com uma dessas contas; eles
+          recebem a solicitação de login diretamente do seu dispositivo/navegador, não passa pelos
+          nossos servidores.</li>
+        <li><strong>Track123</strong> (rastreamento de encomendas) — se você optar por importar códigos
+          de rastreio em lote, esses códigos (e a transportadora) são enviados a esse serviço pra
+          consultar o status de entrega. Nenhum outro dado seu é compartilhado com eles.</li>
+        <li><strong>Expo</strong> (infraestrutura de notificações push) — recebe o token do dispositivo
+          pra entregar as notificações.</li>
+        <li><strong>Provedor de armazenamento de arquivos</strong> (nuvem) — hospeda as fotos/PDFs que
+          você anexa como evidência.</li>
+      </ul>
+      <p>Não compartilhamos seus dados com anunciantes ou corretores de dados (data brokers).</p>
+
+      <h2>Segurança</h2>
+      <p>
+        Toda comunicação entre o app e nossos servidores é criptografada (HTTPS/TLS). Senhas são
+        armazenadas com hash (bcrypt), nunca em texto puro.
+      </p>
+
+      <h2>Retenção e exclusão de dados</h2>
+      <p>
+        Mantemos seus dados enquanto sua conta existir. Você pode solicitar a exclusão da sua conta
+        e de todos os dados associados a qualquer momento, entrando em contato pelo email abaixo.
+      </p>
+
+      <h2>Crianças</h2>
+      <p>O ShiftProof não é direcionado a menores de 18 anos e não coletamos intencionalmente dados de crianças.</p>
+
+      <h2>Mudanças nesta política</h2>
+      <p>Se atualizarmos esta política, a data no topo desta página será atualizada.</p>
+
+      <h2>Contato</h2>
+      <p>
+        Dúvidas sobre privacidade ou pedidos de exclusão de dados:
+        <a href="mailto:contact@rinkodigital.com">contact@rinkodigital.com</a>
+      </p>
+    </main>
+  </body>
+</html>

@@ -158,6 +158,12 @@ export function AuthPage() {
             </>
           )}
         </div>
+
+        <div style={{ textAlign: "center", marginTop: 18, position: "relative", zIndex: 1 }}>
+          <a href="/privacy.html" target="_blank" rel="noreferrer" className="faint">
+            Política de Privacidade
+          </a>
+        </div>
       </div>
     </div>
   );

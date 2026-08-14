@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { Redirect, useRouter } from "expo-router";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { ApiError } from "../src/api/client";
@@ -145,6 +145,13 @@ export default function AuthScreen() {
             )}
           </>
         )}
+
+        <Pressable
+          onPress={() => Linking.openURL("https://shiftprooff.netlify.app/privacy.html")}
+          style={{ alignItems: "center", marginTop: 18 }}
+        >
+          <Text style={styles.privacyLink}>Política de Privacidade</Text>
+        </Pressable>
       </View>
     </Screen>
   );
@@ -217,5 +224,9 @@ const styles = StyleSheet.create({
   appleButton: {
     height: 46,
     marginTop: 10,
+  },
+  privacyLink: {
+    color: colors.textFaint,
+    fontSize: 12,
   },
 });
