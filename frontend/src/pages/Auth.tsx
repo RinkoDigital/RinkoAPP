@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
 import { isGoogleSignInConfigured, renderGoogleButton } from "../api/googleAuth";
 import authLogo from "../assets/auth-logo.png";
 
 export function AuthPage() {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -24,13 +26,13 @@ export function AuthPage() {
         await loginWithGoogle(idToken);
         navigate("/", { replace: true });
       } catch (err) {
-        setError(err instanceof ApiError ? err.message : "Failed to sign in with Google");
+        setError(err instanceof ApiError ? err.message : t("auth.errors.googleSignInFailed"));
       }
     }).catch(() => {
       // Script failed to load (offline, blocked) — button just won't
       // render; email/password sign-in still works.
     });
-  }, [loginWithGoogle, navigate]);
+  }, [loginWithGoogle, navigate, t]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -44,7 +46,7 @@ export function AuthPage() {
       }
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Something went wrong");
+      setError(err instanceof ApiError ? err.message : t("auth.errors.somethingWentWrong"));
     } finally {
       setLoading(false);
     }
@@ -78,7 +80,7 @@ export function AuthPage() {
             />
           </div>
           <div className="faint" style={{ letterSpacing: "0.08em" }}>
-            Your routes. Your work. Your records.
+            {t("auth.tagline")}
           </div>
         </div>
 
@@ -95,7 +97,7 @@ export function AuthPage() {
                 fontWeight: 600,
               }}
             >
-              Entrar
+              {t("auth.login")}
             </button>
             <button
               type="button"
@@ -108,7 +110,7 @@ export function AuthPage() {
                 fontWeight: 600,
               }}
             >
-              Criar conta
+              {t("auth.signup")}
             </button>
           </div>
 
@@ -117,12 +119,12 @@ export function AuthPage() {
           <form onSubmit={handleSubmit}>
             {mode === "signup" && (
               <div className="field">
-                <label htmlFor="name">Nome</label>
+                <label htmlFor="name">{t("auth.name")}</label>
                 <input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
               </div>
             )}
             <div className="field">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email">{t("auth.email")}</label>
               <input
                 id="email"
                 type="email"
@@ -132,7 +134,7 @@ export function AuthPage() {
               />
             </div>
             <div className="field">
-              <label htmlFor="password">Senha</label>
+              <label htmlFor="password">{t("auth.password")}</label>
               <input
                 id="password"
                 type="password"
@@ -143,7 +145,7 @@ export function AuthPage() {
               />
             </div>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? <span className="spinner" /> : mode === "login" ? "Entrar" : "Criar conta"}
+              {loading ? <span className="spinner" /> : mode === "login" ? t("auth.login") : t("auth.signup")}
             </button>
           </form>
 
@@ -151,7 +153,7 @@ export function AuthPage() {
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "18px 0 14px" }}>
                 <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
-                <span className="faint" style={{ fontSize: 12 }}>ou continue com</span>
+                <span className="faint" style={{ fontSize: 12 }}>{t("auth.orContinueWith")}</span>
                 <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
               </div>
               <div ref={googleButtonRef} style={{ display: "flex", justifyContent: "center" }} />
@@ -161,7 +163,7 @@ export function AuthPage() {
 
         <div style={{ textAlign: "center", marginTop: 18, position: "relative", zIndex: 1 }}>
           <a href="/privacy.html" target="_blank" rel="noreferrer" className="faint">
-            Política de Privacidade
+            {t("auth.privacyPolicy")}
           </a>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../api/client";
 import { formatCents, formatDate } from "../api/format";
 import type { LedgerSummary, WorkSession } from "../api/types";
@@ -8,6 +9,7 @@ import { BottomNav } from "../components/BottomNav";
 import { StatusPill } from "../components/StatusPill";
 
 export function HomePage() {
+  const { t } = useTranslation();
   const { driver } = useAuth();
   const [ledger, setLedger] = useState<LedgerSummary | null>(null);
   const [sessions, setSessions] = useState<WorkSession[] | null>(null);
@@ -19,8 +21,8 @@ export function HomePage() {
         setLedger(ledgerData);
         setSessions(sessionsData);
       })
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load"));
-  }, []);
+      .catch((err) => setError(err instanceof ApiError ? err.message : t("common.failedToLoad")));
+  }, [t]);
 
   const firstName = driver?.name.split(" ")[0] ?? "";
 
@@ -32,25 +34,25 @@ export function HomePage() {
           aria-hidden="true"
           style={{ top: -90, right: -40, width: 180, height: 180 }}
         />
-        <h1 style={{ position: "relative", zIndex: 1 }}>Boa tarde, {firstName}</h1>
+        <h1 style={{ position: "relative", zIndex: 1 }}>{t("home.greeting", { name: firstName })}</h1>
       </div>
       <div className="screen">
         {error && <div className="error-banner">{error}</div>}
 
         <div className="card" style={{ background: "var(--surface-2)" }}>
-          <div className="faint">OUTSTANDING EARNINGS</div>
+          <div className="faint">{t("home.outstandingEarnings")}</div>
           <div className="mono" style={{ fontSize: "2rem", color: "var(--violet-glow)", marginTop: 4 }}>
             {ledger ? formatCents(ledger.outstanding_total_cents) : <span className="spinner" />}
           </div>
           <Link to="/ledger" className="btn-ghost">
-            Ver payment ledger →
+            {t("home.viewPaymentLedger")}
           </Link>
         </div>
 
-        <h3 style={{ marginTop: 24, marginBottom: 8 }}>Sessões recentes</h3>
-        {sessions === null && <div className="empty-state">Carregando…</div>}
+        <h3 style={{ marginTop: 24, marginBottom: 8 }}>{t("home.recentSessions")}</h3>
+        {sessions === null && <div className="empty-state">{t("common.loading")}</div>}
         {sessions !== null && sessions.length === 0 && (
-          <div className="empty-state">Nenhuma work session ainda. Toque em + para começar.</div>
+          <div className="empty-state">{t("home.noSessionsYet")}</div>
         )}
         {sessions?.map((s) => (
           <Link key={s.id} to={`/sessions/${s.id}`} style={{ textDecoration: "none", color: "inherit" }}>
@@ -63,7 +65,11 @@ export function HomePage() {
                 <StatusPill status={s.status === "open" ? "pending" : s.payment_status} />
               </div>
               <div className="faint" style={{ marginTop: 4 }}>
-                {formatDate(s.service_date)} · {s.packages_completed}/{s.packages_assigned} pacotes
+                {t("home.sessionMeta", {
+                  date: formatDate(s.service_date),
+                  completed: s.packages_completed,
+                  assigned: s.packages_assigned,
+                })}
               </div>
               <div className="mono" style={{ marginTop: 6 }}>
                 {formatCents(s.expected_gross_cents)}
@@ -73,7 +79,7 @@ export function HomePage() {
         ))}
       </div>
 
-      <Link to="/sessions/new" className="fab" aria-label="Iniciar work session">
+      <Link to="/sessions/new" className="fab" aria-label={t("home.startSessionAria")}>
         +
       </Link>
       <BottomNav />

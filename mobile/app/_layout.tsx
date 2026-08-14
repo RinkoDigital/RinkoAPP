@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import "../src/i18n";
 import { AuthProvider } from "../src/auth/AuthContext";
 import { colors } from "../src/theme";
 

@@ -1,10 +1,5 @@
+import { useTranslation } from "react-i18next";
 import type { PaymentStatus } from "../api/types";
-
-const LABELS: Record<PaymentStatus, string> = {
-  pending: "Pending",
-  partial: "Partial",
-  received: "Received",
-};
 
 const CLASSES: Record<PaymentStatus, string> = {
   pending: "pill pill-pending",
@@ -13,5 +8,6 @@ const CLASSES: Record<PaymentStatus, string> = {
 };
 
 export function StatusPill({ status }: { status: PaymentStatus }) {
-  return <span className={CLASSES[status]}>{LABELS[status]}</span>;
+  const { t } = useTranslation();
+  return <span className={CLASSES[status]}>{t(`statusPill.${status}`)}</span>;
 }

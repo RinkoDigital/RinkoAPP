@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api, getAuthToken } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { BottomNav } from "../components/BottomNav";
 
 export function AccountPage() {
+  const { t } = useTranslation();
   const { driver, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -28,7 +30,7 @@ export function AccountPage() {
   return (
     <div className="app-shell">
       <div className="top-bar">
-        <h1>Perfil</h1>
+        <h1>{t("account.title")}</h1>
       </div>
       <div className="screen">
         <div className="card">
@@ -36,28 +38,27 @@ export function AccountPage() {
           <div className="faint">{driver?.email}</div>
           {driver && !driver.email_verified && (
             <div className="faint" style={{ marginTop: 6, color: "var(--sakura)" }}>
-              Email ainda não verificado
+              {t("account.emailUnverified")}
             </div>
           )}
         </div>
 
         <div className="card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h3 style={{ margin: 0 }}>Plano</h3>
+            <h3 style={{ margin: 0 }}>{t("account.plan")}</h3>
             <span className="pill pill-good" style={{ textTransform: "uppercase" }}>
-              Grátis
+              {t("account.free")}
             </span>
           </div>
           <p className="faint" style={{ marginTop: 4 }}>
-            O ShiftProof está gratuito, sem limites, enquanto validamos o produto — Work Report, CSV,
-            Ledger, exportação em .docx e evidence continuam liberados pra todo mundo.
+            {t("account.planDescription")}
           </p>
         </div>
 
         <div className="card">
-          <h3 style={{ marginTop: 0 }}>Seus dados, sem lock-in</h3>
+          <h3 style={{ marginTop: 0 }}>{t("account.dataTitle")}</h3>
           <button className="btn btn-secondary" onClick={handleExportCsv}>
-            Exportar sessões (.csv)
+            {t("account.exportCsv")}
           </button>
         </div>
 
@@ -69,7 +70,7 @@ export function AccountPage() {
             navigate("/auth", { replace: true });
           }}
         >
-          Sair
+          {t("account.logout")}
         </button>
       </div>
       <BottomNav />

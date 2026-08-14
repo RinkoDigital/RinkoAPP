@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../api/client";
 import { formatCents, formatDate } from "../api/format";
 import { getCurrentLocation, stampImageWithLocation } from "../api/locationStamp";
@@ -13,24 +14,8 @@ import type {
 } from "../api/types";
 import { StatusPill } from "../components/StatusPill";
 
-const RETURN_REASONS: { value: ReturnReason; label: string }[] = [
-  { value: "refused", label: "Recusado" },
-  { value: "wrong_address", label: "Endereço errado" },
-  { value: "damaged", label: "Danificado" },
-  { value: "undeliverable", label: "Não entregável" },
-  { value: "other", label: "Outro" },
-];
-
-const EVIDENCE_KINDS: { value: EvidenceKind; label: string }[] = [
-  { value: "route_screenshot", label: "Route screenshot" },
-  { value: "rate_screenshot", label: "Rate screenshot" },
-  { value: "gps_session", label: "GPS session" },
-  { value: "completion_record", label: "Completion record" },
-  { value: "settlement_statement", label: "Settlement statement" },
-  { value: "other", label: "Other" },
-];
-
 export function SessionDetailPage() {
+  const { t } = useTranslation();
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const [session, setSession] = useState<WorkSession | null>(null);
@@ -57,9 +42,26 @@ export function SessionDetailPage() {
   const [resolveOutcome, setResolveOutcome] = useState<"delivered" | "returned">("delivered");
   const [resolveReturnReason, setResolveReturnReason] = useState<ReturnReason>("wrong_address");
 
+  const RETURN_REASONS: { value: ReturnReason; label: string }[] = [
+    { value: "refused", label: t("returnReasons.refused") },
+    { value: "wrong_address", label: t("returnReasons.wrongAddress") },
+    { value: "damaged", label: t("returnReasons.damaged") },
+    { value: "undeliverable", label: t("returnReasons.undeliverable") },
+    { value: "other", label: t("returnReasons.other") },
+  ];
+
+  const EVIDENCE_KINDS: { value: EvidenceKind; label: string }[] = [
+    { value: "route_screenshot", label: t("sessionDetail.evidence.kinds.routeScreenshot") },
+    { value: "rate_screenshot", label: t("sessionDetail.evidence.kinds.rateScreenshot") },
+    { value: "gps_session", label: t("sessionDetail.evidence.kinds.gpsSession") },
+    { value: "completion_record", label: t("sessionDetail.evidence.kinds.completionRecord") },
+    { value: "settlement_statement", label: t("sessionDetail.evidence.kinds.settlementStatement") },
+    { value: "other", label: t("sessionDetail.evidence.kinds.other") },
+  ];
+
   function load() {
     if (!sessionId) return;
-    api.get<WorkSession>(`/sessions/${sessionId}`).then(setSession).catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load"));
+    api.get<WorkSession>(`/sessions/${sessionId}`).then(setSession).catch((err) => setError(err instanceof ApiError ? err.message : t("common.failedToLoad")));
     api.get<Evidence[]>(`/sessions/${sessionId}/evidence`).then(setEvidence).catch(() => {});
     api.get<Package[]>(`/sessions/${sessionId}/packages`).then(setPackages).catch(() => {});
   }
@@ -78,7 +80,7 @@ export function SessionDetailPage() {
       });
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to close session");
+      setError(err instanceof ApiError ? err.message : t("sessionDetail.errors.closeFailed"));
     } finally {
       setClosing(false);
     }
@@ -96,7 +98,7 @@ export function SessionDetailPage() {
       setPaymentReceived("");
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to record payment");
+      setError(err instanceof ApiError ? err.message : t("sessionDetail.errors.paymentFailed"));
     } finally {
       setRecordingPayment(false);
     }
@@ -132,7 +134,7 @@ export function SessionDetailPage() {
       if (err instanceof ApiError && err.status === 402) {
         setError(`${err.message}`);
       } else {
-        setError(err instanceof ApiError ? err.message : "Failed to upload evidence");
+        setError(err instanceof ApiError ? err.message : t("sessionDetail.evidence.errors.uploadFailed"));
       }
     } finally {
       setUploadingEvidence(false);
@@ -157,11 +159,11 @@ export function SessionDetailPage() {
       );
       setImportText("");
       if (result.skipped_duplicates.length > 0) {
-        setError(`${result.skipped_duplicates.length} código(s) já existiam nessa sessão e foram ignorados.`);
+        setError(t("sessionDetail.packages.skippedDuplicates", { count: result.skipped_duplicates.length }));
       }
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to import packages");
+      setError(err instanceof ApiError ? err.message : t("sessionDetail.packages.errors.importFailed"));
     } finally {
       setImporting(false);
     }
@@ -175,7 +177,7 @@ export function SessionDetailPage() {
       await api.post(`/sessions/${sessionId}/packages/refresh-status`, {});
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to refresh carrier status");
+      setError(err instanceof ApiError ? err.message : t("sessionDetail.packages.errors.refreshFailed"));
     } finally {
       setRefreshingStatus(false);
     }
@@ -192,7 +194,7 @@ export function SessionDetailPage() {
       setResolvingId(null);
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to resolve package");
+      setError(err instanceof ApiError ? err.message : t("sessionDetail.packages.errors.resolveFailed"));
     }
   }
 
@@ -220,7 +222,7 @@ export function SessionDetailPage() {
     <div className="app-shell">
       <div className="top-bar">
         <button className="btn-ghost" onClick={() => navigate(-1)}>
-          ← Voltar
+          {t("sessionDetail.back")}
         </button>
       </div>
       <div className="screen">
@@ -237,26 +239,26 @@ export function SessionDetailPage() {
           <div className="faint">{formatDate(session.service_date)}</div>
 
           <div className="row">
-            <span className="label">Packages assigned</span>
+            <span className="label">{t("sessionDetail.packagesAssigned")}</span>
             <span className="mono">{session.packages_assigned}</span>
           </div>
           <div className="row">
-            <span className="label">Packages completed</span>
+            <span className="label">{t("sessionDetail.packagesCompleted")}</span>
             <span className="mono">{session.packages_completed}</span>
           </div>
           <div className="row">
-            <span className="label">Agreed rate</span>
+            <span className="label">{t("sessionDetail.agreedRate")}</span>
             <span className="mono">{formatCents(session.agreed_rate_cents)}/pkg</span>
           </div>
           {session.expected_gross_cents !== null && (
             <div className="row">
-              <span className="label">Expected gross</span>
+              <span className="label">{t("sessionDetail.expectedGross")}</span>
               <span className="mono">{formatCents(session.expected_gross_cents)}</span>
             </div>
           )}
           {session.status === "closed" && (
             <div className="row">
-              <span className="label">Outstanding</span>
+              <span className="label">{t("sessionDetail.outstanding")}</span>
               <span className="mono">{formatCents(session.outstanding_cents)}</span>
             </div>
           )}
@@ -264,9 +266,9 @@ export function SessionDetailPage() {
 
         {session.status === "open" && (
           <form onSubmit={handleClose} className="card">
-            <h3 style={{ marginTop: 0 }}>Encerrar sessão</h3>
+            <h3 style={{ marginTop: 0 }}>{t("sessionDetail.closeSession.title")}</h3>
             <div className="field">
-              <label htmlFor="exceptions">Exceptions</label>
+              <label htmlFor="exceptions">{t("sessionDetail.closeSession.exceptions")}</label>
               <input
                 id="exceptions"
                 type="number"
@@ -276,7 +278,7 @@ export function SessionDetailPage() {
               />
             </div>
             <div className="field">
-              <label htmlFor="mileage">Mileage</label>
+              <label htmlFor="mileage">{t("sessionDetail.closeSession.mileage")}</label>
               <input
                 id="mileage"
                 type="number"
@@ -287,16 +289,16 @@ export function SessionDetailPage() {
               />
             </div>
             <button type="submit" className="btn btn-primary" disabled={closing}>
-              {closing ? <span className="spinner" /> : "Encerrar e gerar Work Report"}
+              {closing ? <span className="spinner" /> : t("sessionDetail.closeSession.submit")}
             </button>
           </form>
         )}
 
         {session.status === "closed" && session.payment_status !== "received" && (
           <form onSubmit={handleRecordPayment} className="card">
-            <h3 style={{ marginTop: 0 }}>Registrar pagamento recebido</h3>
+            <h3 style={{ marginTop: 0 }}>{t("sessionDetail.recordPayment.title")}</h3>
             <div className="field">
-              <label htmlFor="received">Recebido ($)</label>
+              <label htmlFor="received">{t("sessionDetail.recordPayment.receivedLabel")}</label>
               <input
                 id="received"
                 type="number"
@@ -308,14 +310,14 @@ export function SessionDetailPage() {
               />
             </div>
             <button type="submit" className="btn btn-primary" disabled={recordingPayment}>
-              {recordingPayment ? <span className="spinner" /> : "Registrar pagamento"}
+              {recordingPayment ? <span className="spinner" /> : t("sessionDetail.recordPayment.submit")}
             </button>
           </form>
         )}
 
         <div className="card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h3 style={{ margin: 0 }}>Pacotes</h3>
+            <h3 style={{ margin: 0 }}>{t("sessionDetail.packages.title")}</h3>
             {packages.some((p) => p.source !== "manual") && (
               <button
                 type="button"
@@ -324,13 +326,13 @@ export function SessionDetailPage() {
                 disabled={refreshingStatus}
                 style={{ fontSize: 13 }}
               >
-                {refreshingStatus ? <span className="spinner" /> : "↻ Atualizar status"}
+                {refreshingStatus ? <span className="spinner" /> : t("sessionDetail.packages.refreshStatus")}
               </button>
             )}
           </div>
 
           <div style={{ marginTop: 12, marginBottom: 12 }}>
-            {packages.length === 0 && <span className="faint">Nenhum pacote registrado ainda.</span>}
+            {packages.length === 0 && <span className="faint">{t("sessionDetail.packages.none")}</span>}
             {packages.map((pkg) => (
               <div
                 key={pkg.id}
@@ -340,10 +342,12 @@ export function SessionDetailPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span className="mono">{pkg.tracking_code}</span>
                   {pkg.outcome === null ? (
-                    <span className="pill pill-pending">Pendente</span>
+                    <span className="pill pill-pending">{t("sessionDetail.packages.outcome.pending")}</span>
                   ) : (
                     <span className={`pill ${pkg.outcome === "delivered" ? "pill-good" : "pill-bad"}`}>
-                      {pkg.outcome === "delivered" ? "Entregue" : "Devolvido"}
+                      {pkg.outcome === "delivered"
+                        ? t("sessionDetail.packages.outcome.delivered")
+                        : t("sessionDetail.packages.outcome.returned")}
                     </span>
                   )}
                 </div>
@@ -360,7 +364,7 @@ export function SessionDetailPage() {
                     style={{ alignSelf: "flex-start", fontSize: 13 }}
                     onClick={() => setResolvingId(pkg.id)}
                   >
-                    Confirmar entrega/devolução
+                    {t("sessionDetail.packages.confirmOutcome")}
                   </button>
                 )}
 
@@ -370,8 +374,8 @@ export function SessionDetailPage() {
                       value={resolveOutcome}
                       onChange={(e) => setResolveOutcome(e.target.value as "delivered" | "returned")}
                     >
-                      <option value="delivered">Entregue</option>
-                      <option value="returned">Devolvido</option>
+                      <option value="delivered">{t("sessionDetail.packages.outcome.delivered")}</option>
+                      <option value="returned">{t("sessionDetail.packages.outcome.returned")}</option>
                     </select>
                     {resolveOutcome === "returned" && (
                       <select
@@ -387,10 +391,10 @@ export function SessionDetailPage() {
                     )}
                     <div style={{ display: "flex", gap: 8 }}>
                       <button type="button" className="btn btn-primary" onClick={() => handleResolve(pkg)}>
-                        Confirmar
+                        {t("sessionDetail.packages.confirm")}
                       </button>
                       <button type="button" className="btn-ghost" onClick={() => setResolvingId(null)}>
-                        Cancelar
+                        {t("sessionDetail.packages.cancel")}
                       </button>
                     </div>
                   </div>
@@ -401,7 +405,7 @@ export function SessionDetailPage() {
 
           <form onSubmit={handleBulkImport}>
             <div className="field">
-              <label htmlFor="importCourier">Transportadora</label>
+              <label htmlFor="importCourier">{t("sessionDetail.packages.courierLabel")}</label>
               <select
                 id="importCourier"
                 value={importCourier}
@@ -409,17 +413,17 @@ export function SessionDetailPage() {
               >
                 <option value="uniuni">UniUni</option>
                 <option value="gofo">GOFO</option>
-                <option value="">Detectar automaticamente</option>
+                <option value="">{t("sessionDetail.packages.courierAutoDetect")}</option>
               </select>
             </div>
             <div className="field">
-              <label htmlFor="importCodes">Códigos de rastreio (um por linha)</label>
+              <label htmlFor="importCodes">{t("sessionDetail.packages.importCodesLabel")}</label>
               <textarea
                 id="importCodes"
                 rows={4}
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
-                placeholder={"LV209031969CN\nLV209031970CN"}
+                placeholder={t("sessionDetail.packages.importPlaceholder")}
               />
             </div>
             <button
@@ -427,15 +431,15 @@ export function SessionDetailPage() {
               className="btn btn-secondary"
               disabled={importing || !importText.trim()}
             >
-              {importing ? <span className="spinner" /> : "Importar pacotes"}
+              {importing ? <span className="spinner" /> : t("sessionDetail.packages.importSubmit")}
             </button>
           </form>
         </div>
 
         <div className="card">
-          <h3 style={{ marginTop: 0 }}>Evidence</h3>
+          <h3 style={{ marginTop: 0 }}>{t("sessionDetail.evidence.title")}</h3>
           <div style={{ marginBottom: 12 }}>
-            {evidence.length === 0 && <span className="faint">Nenhuma evidência anexada ainda.</span>}
+            {evidence.length === 0 && <span className="faint">{t("sessionDetail.evidence.none")}</span>}
             {evidence.map((ev) => (
               <a
                 key={ev.id}
@@ -453,7 +457,7 @@ export function SessionDetailPage() {
 
           <form onSubmit={handleUploadEvidence}>
             <div className="field">
-              <label htmlFor="evidenceKind">Tipo</label>
+              <label htmlFor="evidenceKind">{t("sessionDetail.evidence.typeLabel")}</label>
               <select
                 id="evidenceKind"
                 value={evidenceKind}
@@ -467,7 +471,7 @@ export function SessionDetailPage() {
               </select>
             </div>
             <div className="field">
-              <label htmlFor="evidenceFile">Arquivo</label>
+              <label htmlFor="evidenceFile">{t("sessionDetail.evidence.fileLabel")}</label>
               <input
                 id="evidenceFile"
                 type="file"
@@ -476,14 +480,14 @@ export function SessionDetailPage() {
               />
             </div>
             <button type="submit" className="btn btn-secondary" disabled={uploadingEvidence || !evidenceFile}>
-              {uploadingEvidence ? <span className="spinner" /> : "Anexar evidência"}
+              {uploadingEvidence ? <span className="spinner" /> : t("sessionDetail.evidence.submit")}
             </button>
           </form>
         </div>
 
         {session.status === "closed" && (
           <Link to={`/sessions/${session.id}/report`} className="btn btn-primary" style={{ marginTop: 14, textDecoration: "none" }}>
-            Ver Work Report
+            {t("sessionDetail.viewWorkReport")}
           </Link>
         )}
       </div>

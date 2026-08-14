@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../api/client";
 import { formatCents, formatDate } from "../api/format";
 import type { LedgerSummary } from "../api/types";
@@ -7,6 +8,7 @@ import { BottomNav } from "../components/BottomNav";
 import { StatusPill } from "../components/StatusPill";
 
 export function LedgerPage() {
+  const { t } = useTranslation();
   const [ledger, setLedger] = useState<LedgerSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,26 +16,26 @@ export function LedgerPage() {
     api
       .get<LedgerSummary>("/ledger")
       .then(setLedger)
-      .catch((err) => setError(err instanceof ApiError ? err.message : "Failed to load"));
-  }, []);
+      .catch((err) => setError(err instanceof ApiError ? err.message : t("common.failedToLoad")));
+  }, [t]);
 
   return (
     <div className="app-shell">
       <div className="top-bar">
-        <h1>Payment Ledger</h1>
+        <h1>{t("ledger.title")}</h1>
       </div>
       <div className="screen">
         {error && <div className="error-banner">{error}</div>}
 
         <div className="card" style={{ background: "var(--surface-2)", textAlign: "center" }}>
-          <div className="faint">OUTSTANDING</div>
+          <div className="faint">{t("ledger.outstanding")}</div>
           <div className="mono" style={{ fontSize: "2rem", color: "var(--violet-glow)" }}>
             {ledger ? formatCents(ledger.outstanding_total_cents) : <span className="spinner" />}
           </div>
         </div>
 
         {ledger?.entries.length === 0 && (
-          <div className="empty-state">Nenhum pagamento pendente. Tudo em dia.</div>
+          <div className="empty-state">{t("ledger.none")}</div>
         )}
 
         {ledger?.entries.map((entry) => (
@@ -52,11 +54,11 @@ export function LedgerPage() {
                 {entry.route_id ? ` · ${entry.route_id}` : ""}
               </div>
               <div className="row">
-                <span className="label">Expected</span>
+                <span className="label">{t("ledger.expected")}</span>
                 <span className="mono">{formatCents(entry.expected_gross_cents)}</span>
               </div>
               <div className="row">
-                <span className="label">Outstanding</span>
+                <span className="label">{t("ledger.outstandingRow")}</span>
                 <span className="mono">{formatCents(entry.outstanding_cents)}</span>
               </div>
             </div>
