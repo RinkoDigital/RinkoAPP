@@ -52,7 +52,11 @@
       "expo-apple-authentication"
     ],
     "extra": {
-      "router": {}
-    }
+      "router": {},
+      "eas": {
+        "projectId": "187d89f6-afa6-464e-a9e2-05eda67e84e1"
+      }
+    },
+    "owner": "rinkodigital"
   }
 }
