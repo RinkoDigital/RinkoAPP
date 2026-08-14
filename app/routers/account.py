@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Driver, PushToken
+from app.models import AuthToken, Carrier, Driver, Evidence, Package, PushToken, WorkSession
 from app.plans import can_export_docx, evidence_limit
 from app.schemas import PlanInfo, PlanUpdate, PushTokenRegister
 from app.security import get_current_driver
@@ -63,4 +63,30 @@ def unregister_push_token(
     db.query(PushToken).filter(
         PushToken.token == payload.token, PushToken.driver_id == driver.id
     ).delete()
+    db.commit()
+
+
+@router.delete("/me", status_code=204)
+def delete_account(
+    db: Session = Depends(get_db),
+    driver: Driver = Depends(get_current_driver),
+):
+    """Permanently deletes the driver and everything tied to their account.
+
+    No cascade is configured at the DB/ORM level, so children are removed
+    explicitly in FK-safe order before the driver row itself. Once the
+    driver row is gone, get_current_driver rejects any outstanding token
+    for this account on its next use.
+    """
+    session_ids = [
+        row.id for row in db.query(WorkSession.id).filter(WorkSession.driver_id == driver.id)
+    ]
+    if session_ids:
+        db.query(Evidence).filter(Evidence.session_id.in_(session_ids)).delete(synchronize_session=False)
+        db.query(Package).filter(Package.session_id.in_(session_ids)).delete(synchronize_session=False)
+    db.query(WorkSession).filter(WorkSession.driver_id == driver.id).delete(synchronize_session=False)
+    db.query(Carrier).filter(Carrier.driver_id == driver.id).delete(synchronize_session=False)
+    db.query(AuthToken).filter(AuthToken.driver_id == driver.id).delete(synchronize_session=False)
+    db.query(PushToken).filter(PushToken.driver_id == driver.id).delete(synchronize_session=False)
+    db.delete(driver)
     db.commit()

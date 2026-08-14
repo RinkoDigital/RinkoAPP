@@ -1,9 +1,9 @@
 import { Directory, File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { useRouter } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { API_BASE_URL, api } from "../../src/api/client";
+import { API_BASE_URL, api, ApiError } from "../../src/api/client";
 import { useAuth } from "../../src/auth/AuthContext";
 import { AppButton, Card, ErrorBanner, Faint, Screen, Title, TopBar } from "../../src/components/ui";
 import { unregisterPushToken } from "../../src/native/pushNotifications";
@@ -16,6 +16,28 @@ export default function AccountScreen() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function deleteAccount() {
+    setError(null);
+    setDeleting(true);
+    try {
+      await api.del("/account/me");
+      await unregisterPushToken();
+      await logout();
+      router.replace("/auth");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("common.failedToLoad"));
+      setDeleting(false);
+    }
+  }
+
+  function handleDeleteAccount() {
+    Alert.alert(t("account.deleteConfirmTitle"), t("account.deleteConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("account.deleteAccount"), style: "destructive", onPress: deleteAccount },
+    ]);
+  }
 
   async function handleExportCsv() {
     setError(null);
@@ -79,6 +101,13 @@ export default function AccountScreen() {
       </Card>
 
       <AppButton title={t("account.logout")} variant="danger" onPress={handleLogout} />
+      <AppButton
+        title={t("account.deleteAccount")}
+        variant="ghost"
+        onPress={handleDeleteAccount}
+        loading={deleting}
+        style={{ marginTop: 10 }}
+      />
     </Screen>
   );
 }

@@ -74,6 +74,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) => request<T>(path, { method: "POST", body }),
+  delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
   postForm: <T>(path: string, form: FormData) =>
     request<T>(path, { method: "POST", body: form }),
   // Evidence/POD file_url is relative ("/uploads/...") when the backend

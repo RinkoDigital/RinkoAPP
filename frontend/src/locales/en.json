@@ -186,6 +186,8 @@
     "dataTitle": "Your data, no lock-in",
     "exportCsv": "Export sessions (.csv)",
     "logout": "Log out",
+    "deleteAccount": "Delete account",
+    "deleteConfirm": "This permanently deletes your account and all your sessions, packages, and evidence. This can't be undone. Continue?",
     "errors": {
       "exportFailed": "Failed to export"
     }

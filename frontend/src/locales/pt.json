@@ -186,6 +186,8 @@
     "dataTitle": "Seus dados, sem lock-in",
     "exportCsv": "Exportar sessões (.csv)",
     "logout": "Sair",
+    "deleteAccount": "Excluir conta",
+    "deleteConfirm": "Isso exclui permanentemente sua conta e todas as suas sessões, pacotes e evidence. Não pode ser desfeito. Continuar?",
     "errors": {
       "exportFailed": "Failed to export"
     }

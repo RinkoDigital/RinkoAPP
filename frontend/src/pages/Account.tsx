@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { api, getAuthToken } from "../api/client";
+import { api, ApiError, getAuthToken } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { BottomNav } from "../components/BottomNav";
 
@@ -8,6 +9,22 @@ export function AccountPage() {
   const { t } = useTranslation();
   const { driver, logout } = useAuth();
   const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function handleDeleteAccount() {
+    if (!window.confirm(t("account.deleteConfirm"))) return;
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      await api.delete("/account/me");
+      logout();
+      navigate("/auth", { replace: true });
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : t("common.failedToLoad"));
+      setDeleting(false);
+    }
+  }
 
   function handleExportCsv() {
     const token = getAuthToken();
@@ -71,6 +88,16 @@ export function AccountPage() {
           }}
         >
           {t("account.logout")}
+        </button>
+
+        {deleteError && <div className="error-banner">{deleteError}</div>}
+        <button
+          className="btn-ghost"
+          style={{ color: "var(--bad)", marginTop: 10 }}
+          onClick={handleDeleteAccount}
+          disabled={deleting}
+        >
+          {deleting ? <span className="spinner" /> : t("account.deleteAccount")}
         </button>
       </div>
       <BottomNav />
