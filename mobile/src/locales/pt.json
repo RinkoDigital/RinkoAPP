@@ -7,6 +7,7 @@
   "nav": {
     "home": "Início",
     "ledger": "Pagamentos",
+    "quickReport": "Relatórios",
     "account": "Conta"
   },
   "statusPill": {
@@ -192,6 +193,60 @@
     "deleteConfirm": "Isso exclui permanentemente sua conta e todas as suas sessões, pacotes e evidence. Não pode ser desfeito. Continuar?",
     "errors": {
       "exportFailed": "Failed to export"
+    }
+  },
+  "quickReport": {
+    "history": {
+      "title": "Histórico de Entregas",
+      "subtitle": "Busque e revise relatórios de entrega gerados anteriormente.",
+      "newReport": "+ Novo relatório",
+      "statsReports": "RELATÓRIOS",
+      "statsBoxes": "CAIXAS",
+      "statsDelivered": "ENTREGUES",
+      "statsRate": "TAXA",
+      "searchPlaceholder": "Buscar por contratante, motorista, rota ou ID do relatório…",
+      "filters": {
+        "all": "Todos",
+        "complete": "Completo",
+        "partial": "Parcial",
+        "attention": "Atenção"
+      },
+      "noRoute": "Rota não especificada",
+      "delete": "Excluir",
+      "emptyTitle": "Nenhum relatório encontrado",
+      "emptyText": "Gere seu primeiro relatório de entrega para vê-lo aqui."
+    },
+    "form": {
+      "title": "Informações da Entrega",
+      "company": "Nome da Contratante",
+      "companyPlaceholder": "ex: UniUni, GOFO, OnTrac…",
+      "driver": "Nome do Motorista",
+      "driverPlaceholder": "ex: João Silva",
+      "total": "Total de Caixas",
+      "delivered": "Entregues",
+      "notDelivered": "Não Entregues",
+      "route": "Rota / Turno (opcional)",
+      "routePlaceholder": "Rota 24 · Turno da tarde",
+      "notes": "Observações (opcional)",
+      "notesPlaceholder": "Motivo da não entrega, exceções, etc.",
+      "generate": "Gerar relatório",
+      "downloadPdf": "Baixar / Compartilhar PDF",
+      "preparingPdf": "Preparando PDF…",
+      "previewHint": "Seu relatório gerado vai aparecer aqui."
+    },
+    "detail": {
+      "back": "← Voltar",
+      "notFound": "Relatório não encontrado.",
+      "deleteConfirmTitle": "Excluir relatório",
+      "deleteConfirm": "Isso exclui permanentemente esse relatório do seu aparelho. Continuar?"
+    },
+    "errors": {
+      "missingFields": "Informe o nome da contratante e do motorista.",
+      "wholeNumbers": "As quantidades de caixas devem ser números inteiros.",
+      "negative": "As quantidades de caixas não podem ser negativas.",
+      "mismatch": "Entregues ({{delivered}}) + Não entregues ({{notDelivered}}) deve ser igual ao Total ({{total}}).",
+      "pdfFailed": "Não foi possível exportar o relatório.",
+      "saveFailed": "Falha ao salvar o relatório."
     }
   }
 }

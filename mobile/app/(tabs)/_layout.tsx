@@ -41,6 +41,10 @@ export default function TabsLayout() {
         options={{ title: t("nav.ledger"), tabBarIcon: () => <Text>📒</Text> }}
       />
       <Tabs.Screen
+        name="quick-report"
+        options={{ title: t("nav.quickReport"), tabBarIcon: () => <Text>🧾</Text> }}
+      />
+      <Tabs.Screen
         name="account"
         options={{ title: t("nav.account"), tabBarIcon: () => <Text>👤</Text> }}
       />

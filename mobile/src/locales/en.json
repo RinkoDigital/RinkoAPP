@@ -7,6 +7,7 @@
   "nav": {
     "home": "Home",
     "ledger": "Ledger",
+    "quickReport": "Reports",
     "account": "Account"
   },
   "statusPill": {
@@ -192,6 +193,60 @@
     "deleteConfirm": "This permanently deletes your account and all your sessions, packages, and evidence. This can't be undone. Continue?",
     "errors": {
       "exportFailed": "Failed to export"
+    }
+  },
+  "quickReport": {
+    "history": {
+      "title": "Delivery History",
+      "subtitle": "Search and review previously generated delivery reports.",
+      "newReport": "+ New report",
+      "statsReports": "REPORTS",
+      "statsBoxes": "BOXES",
+      "statsDelivered": "DELIVERED",
+      "statsRate": "RATE",
+      "searchPlaceholder": "Search company, driver, route or report ID…",
+      "filters": {
+        "all": "All",
+        "complete": "Complete",
+        "partial": "Partial",
+        "attention": "Attention"
+      },
+      "noRoute": "No route specified",
+      "delete": "Delete",
+      "emptyTitle": "No reports found",
+      "emptyText": "Generate your first delivery report to see it here."
+    },
+    "form": {
+      "title": "Delivery Information",
+      "company": "Company Name",
+      "companyPlaceholder": "e.g. Acme Logistics",
+      "driver": "Driver Name",
+      "driverPlaceholder": "e.g. John Smith",
+      "total": "Total Boxes",
+      "delivered": "Delivered",
+      "notDelivered": "Not Delivered",
+      "route": "Route / Shift (optional)",
+      "routePlaceholder": "Route 24 · PM Shift",
+      "notes": "Observations (optional)",
+      "notesPlaceholder": "Reason for non-delivery, exceptions, etc.",
+      "generate": "Generate report",
+      "downloadPdf": "Download / Share PDF",
+      "preparingPdf": "Preparing PDF…",
+      "previewHint": "Your generated report will appear here."
+    },
+    "detail": {
+      "back": "← Back",
+      "notFound": "Report not found.",
+      "deleteConfirmTitle": "Delete report",
+      "deleteConfirm": "This permanently deletes this report from your device. Continue?"
+    },
+    "errors": {
+      "missingFields": "Please enter the company name and driver name.",
+      "wholeNumbers": "Box counts must be whole numbers.",
+      "negative": "Box counts cannot be negative.",
+      "mismatch": "Delivered ({{delivered}}) + Not Delivered ({{notDelivered}}) must equal Total ({{total}}).",
+      "pdfFailed": "The report could not be exported.",
+      "saveFailed": "Failed to save the report."
     }
   }
 }
