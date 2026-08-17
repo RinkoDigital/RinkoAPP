@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ActivityIndicator } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -87,7 +88,7 @@ export default function HomeScreen() {
         onPress={() => router.push("/sessions/new")}
         accessibilityLabel={t("home.startSessionAria")}
       >
-        <Text style={styles.fabText}>+</Text>
+        <Ionicons name="add" size={30} color={colors.accentInk} />
       </Pressable>
     </View>
   );
@@ -139,10 +140,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.violet,
     alignItems: "center",
     justifyContent: "center",
-  },
-  fabText: {
-    color: colors.accentInk,
-    fontSize: 28,
-    lineHeight: 30,
   },
 });
