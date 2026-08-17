@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
@@ -14,6 +14,7 @@ import type {
   ReturnReason,
   WorkSession,
 } from "../../../src/api/types";
+import { EvidenceMap, type EvidencePin } from "../../../src/components/EvidenceMap";
 import { LocationStamper, type LocationStamperHandle } from "../../../src/components/LocationStamper";
 import { StatusPill } from "../../../src/components/StatusPill";
 import {
@@ -28,7 +29,7 @@ import {
   Title,
   TopBar,
 } from "../../../src/components/ui";
-import { getCurrentLocation, type Coords } from "../../../src/native/locationStamp";
+import { formatCoords, getCurrentLocation, type Coords } from "../../../src/native/locationStamp";
 import { colors } from "../../../src/theme";
 
 export default function SessionDetailScreen() {
@@ -75,6 +76,19 @@ export default function SessionDetailScreen() {
     { value: "undeliverable", label: t("returnReasons.undeliverable") },
     { value: "other", label: t("returnReasons.other") },
   ];
+
+  const evidencePins: EvidencePin[] = useMemo(
+    () =>
+      evidence
+        .filter((ev): ev is Evidence & { latitude: number; longitude: number } => ev.latitude !== null && ev.longitude !== null)
+        .map((ev) => ({
+          id: ev.id,
+          latitude: ev.latitude,
+          longitude: ev.longitude,
+          label: `${EVIDENCE_KINDS.find((k) => k.value === ev.kind)?.label ?? ev.kind} · ${ev.address ?? formatCoords(ev.latitude, ev.longitude)}`,
+        })),
+    [evidence, EVIDENCE_KINDS]
+  );
 
   const load = useCallback(() => {
     if (!sessionId) return;
@@ -494,6 +508,7 @@ export default function SessionDetailScreen() {
 
       <Card>
         <Text style={styles.cardTitle}>{t("sessionDetail.evidence.title")}</Text>
+        <EvidenceMap pins={evidencePins} />
         <View style={styles.chipList}>
           {evidence.length === 0 && <Faint>{t("sessionDetail.evidence.none")}</Faint>}
           {evidence.map((ev) => (
